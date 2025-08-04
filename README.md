@@ -63,10 +63,6 @@ This group project involved developing an interactive Python application to expl
   <img src="https://img.shields.io/badge/-MATLAB-0076A8?style=flat-square&logo=mathworks&logoColor=white" alt="MATLAB" />
 </p>
 
-
-### Methodologies  
-`Econometrics` &nbsp; `Time-Series Forecasting` &nbsp; `Clustering & Classification` &nbsp; `Agile Workflow` &nbsp; `Digital Project Management`
-
 ---
 
 ## Contact
