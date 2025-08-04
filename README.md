@@ -1,8 +1,8 @@
 # Rezi Sabashvili – Data & Economic Analytics Portfolio
 
-Welcome to my personal portfolio. I'm currently pursuing a Master's degree in Economic Policy and Statistical Evaluation at the University of Reims Champagne-Ardenne. This space showcases a curated selection of academic projects in data analysis, statistical modeling, forecasting, and data visualization.
+Welcome to my personal portfolio. I am currently pursuing a Master's degree in Economic Policy and Statistical Evaluation at the University of Reims Champagne-Ardenne. This space showcases a curated selection of academic projects in data analysis, statistical modeling, forecasting, and data visualization.
 
-My academic journey combines economic insight with technical proficiency, and I am particularly interested in applying data-driven solutions in the banking and financial sectors.
+My academic journey combines economic insight with strong technical proficiency, and I am particularly interested in applying data-driven solutions in the banking and financial sectors.
 
 ---
 
@@ -28,8 +28,7 @@ This thesis investigates user behavior and navigation patterns on the Éducapaci
 📁 Available in the `monuments_france_dashboard/` folder  
 
 **Overview**  
-This group project involved developing an interactive Python application to explore a dataset of French monuments. The too allows users to query information such as monument location, type, historical classification, and annual visit counts.  
-
+This group project involved developing an interactive Python application to explore a dataset of French monuments. The tool allows users to query information such as monument location, type, historical classification, and annual visit counts. The project includes a well-structured codebase, automated testing, and complete documentation (roadmap, flowchart, and presentation).
 
 ---
 
@@ -46,8 +45,6 @@ This group project involved developing an interactive Python application to expl
   <a href="https://www.r-project.org/" target="_blank"><img src="https://img.shields.io/badge/-R-276DC3?style=for-the-badge&logo=r&logoColor=white" alt="R" /></a>&nbsp;
   <a href="https://www.sas.com/" target="_blank"><img src="https://img.shields.io/badge/-SAS-1B365D?style=for-the-badge&logo=sas&logoColor=white" alt="SAS" /></a>
 </p>
-
-
 
 ---
 
@@ -69,8 +66,8 @@ This group project involved developing an interactive Python application to expl
 
 - **Email**: rezisabashvili1@gmail.com  
 - **Phone**: +33 6 18 57 91 73  
-- **LinkedIn**: www.linkedin.com/in/rezisabashvili
-- **Portfolio**: https://rezi03.github.io/portfolio/index.html
+- **LinkedIn**: [www.linkedin.com/in/rezisabashvili](https://www.linkedin.com/in/rezisabashvili)  
+- **Portfolio**: [https://rezi03.github.io/portfolio/index.html](https://rezi03.github.io/portfolio/index.html)
 
 ---
 
