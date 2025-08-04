@@ -16,8 +16,8 @@ This repository contains the complete materials for my Master's thesis in Learni
 │   └── 📁 profils                      # Article & presentation on characterizing learning datasets
 │
 📁 data
-│   ├── 📄 educapacite_data.csv         # Anonymized site traces data (CSV)
-│   └── 📄 educapacite_data.xlsx        # Anonymized site traces data (Excel)
+│   ├── 📄 educapacite_data.csv         # Anonymized data (CSV)
+│   └── 📄 educapacite_data.xlsx        # Anonymized data (Excel)
 │
 📁 digital_traces
 │   ├── 📁 data
@@ -27,12 +27,12 @@ This repository contains the complete materials for my Master's thesis in Learni
 │   └── 📄 analyses.ipynb               # Python notebook for hypothesis testing
 │
 📁 analyses
-    ├── 📁 first_analyses              # Initial descriptive statistical analyses
-    ├── 📁 anonymize                   # Notebooks for anonymizing emails and IPs
-    ├── 📁 type                        # Analyses on typical user paths
-    ├── 📁 indicators                  # Indicator calculation notebooks and PDFs
-    ├── 📁 clustering                  # Clustering analysis notebook
-    └── 📁 id_page_title               # Scripts and HTML results on page ID analysis
+    ├── 📁 first_analyses               # Initial descriptive statistical analyses
+    ├── 📁 anonymize                    # Notebooks for anonymizing emails and IPs
+    ├── 📁 type                         # Analyses on typical user paths
+    ├── 📁 indicators                   # Indicator calculation notebooks and PDFs
+    ├── 📁 clustering                   # Clustering analysis notebook
+    └── 📁 id_page_title                # Scripts and HTML results on page ID analysis
 ```
 
 ## How to navigate
