@@ -3,7 +3,7 @@
 This repository contains the complete materials for my Master's thesis in Learning Analytics (M1 level).
 
 ## Repository Structure
-
+```
 .
 ├── final_submission
 │ ├── thesis_final_document.pdf # Final version of the thesis document
@@ -66,7 +66,7 @@ This repository contains the complete materials for my Master's thesis in Learni
 ├── idpagetitleunique.html # Output HTML for unique titles
 ├── pagetitlecompte.html # HTML results for page title counts
 └── pagetitlecompte.py # Script for counting page titles
-
+```
 
 ## How to navigate
 
