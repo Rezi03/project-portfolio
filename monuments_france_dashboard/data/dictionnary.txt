@@ -1,0 +1,65 @@
+french: english
+TOURS ET REMPARTS: Towers and Ramparts
+TOURS CATHEDRALE: Cathedral Towers
+CHATEAU: Castle
+ABBAYE DE MONTMAJOUR: Montmajour Abbey
+CLOITRE CATHEDRALE: Cathedral Cloister
+VILLA KERYLOS: Villa Kerylos
+ABBAYE: Abbey
+CHAPELLE DES MOINES: Monks chapel
+HORLOGE CATHEDRALE: Astronomical Clock
+TOUR CATHEDRALE: Cathedral Tower
+MONASTERE DE BROU: Royal Monastery of Brou
+CRYPTE ET TOURS CATHEDRALE: Crypt and Tower Of Bourges
+PALAIS-JACQUES COEUR: Jacques Coeur Palace
+CHATEAU BUSSY-RABUTIN: Bussy-Rabutin castle
+CHATEAU ET REMPARTS: Castle and ramparts
+SITES MEGALITHIQUES: Megalithic site
+TOURS ET TRESOR CATHEDRALE: Towers and Cathedral Treseaure
+VILLA CAVROIS: Villa Carvois
+CHATEAU DE VOLTAIRE: Voltaires Castle
+TOURS: Towers
+TROPHEE D'AUGUSTE: Augusts Trophee
+TRESOR CATHEDRALE: Cathedral Treseaure
+CHATEAU D'IF: If Castle
+VILLA GALLO ROMAINE: Gallo Roman Villa
+PLACE FORTE: Stronghold
+VILLA GALLO-ROMAINE: Gallo Roman Villa
+HOTEL DE LUNAS: Lunas Hotel
+SITE ARCHEOLOGIQUE: Archaeological Site
+CHATEAU MOTTE-TILLY: Motte-Tilly Castle
+MAISON DE GEORGE SAND: House of George Sand
+ARC DE TRIOMPHE: Arc De Triomphe
+CHAPELLE EXPIATOIRE: Expiatory Chapel
+COLONNE DE JUILLET: July Column
+CONCIERGERIE: Conciergerie
+DOMAINE NATIONAL DU PALAIS-ROYAL: Domaine National du Palais Royal
+HOTEL DE BETHUNE - SULLY: Bethune-Sully Hotel
+HOTEL DE LA MARINE: Hotel de la marine
+PANTHEON: Pantheon
+SAINTE-CHAPELLE: Sainte-Chapelle
+TOUR EIFFEL: Eiffel Tower
+TOURS DE LA CATHEDRALE: Towers Of the Cathedral
+CAIRN DE BARNENEZ: Barnenez Cairn
+VILLA SAVOYE: Savoye Villa
+GROTTE DE PAIR-NON-PAIR: Pair-Non-Pair Cave
+CHATEAU CASTELNAU-BRETENOUX: Castle of the Barons of Castelnau
+DOMAINE NATIONAL: National Domain
+PALAIS DU TAU: Tau Palace
+CAP MODERNE: Cap Moderne
+CHATEAU DE MONTAL: Montal Castle
+BASILIQUE: Basilica
+HOTEL DE SADE: Sade Hotel
+SITE DE GLANUM: Glanum Site
+MAISON DE G CLEMENCEAU: House Of Georges Clemenceau
+FORTERESSE: Fortress
+SANCTUAIRE GALLO-ROMAIN: Gallo-Roman Sanctuary
+MONASTERE: Monastery
+CHATEAU D'AULTERIBE: Aulteribe Castle
+MAISON DES JARDIES: Maison des Jardies
+CLOITRE PSALETTE CATHEDRALE: Cloister of the Psalette Cathedral
+MAISON RENAN: Renan House
+SITES: Sites
+CHATEAU DE PUYGUILHEM: Puyguilhem Castle
+FORT ST-ANDRE: St-Andre Fort
+COLONNE DE LA GRANDE ARMEE: Column of the Grande Armée
