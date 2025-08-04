@@ -47,13 +47,7 @@ This group project involved developing an interactive Python application to expl
 
 ### Tools  
 
-![Power BI](https://img.shields.io/badge/-Power%20BI-F2C811?style=flat-square&logo=powerbi&logoColor=black)  
-![Git](https://img.shields.io/badge/-Git-F05032?style=flat-square&logo=git&logoColor=white)  
-![SPSS](https://img.shields.io/badge/-SPSS-0057A7?style=flat-square)  
-![LaTeX](https://img.shields.io/badge/-LaTeX-008080?style=flat-square&logo=latex&logoColor=white)  
-![Jupyter](https://img.shields.io/badge/-Jupyter-F37626?style=flat-square&logo=jupyter&logoColor=white)  
-![R Markdown](https://img.shields.io/badge/-R%20Markdown-276DC3?style=flat-square&logo=rstudio&logoColor=white)  
-![Matlab](https://img.shields.io/badge/-MATLAB-0076A8?style=flat-square&logo=mathworks&logoColor=white)
+![Power BI](https://img.shields.io/badge/-Power%20BI-F2C811?style=flat-square&logo=powerbi&logoColor=black)![Git](https://img.shields.io/badge/-Git-F05032?style=flat-square&logo=git&logoColor=white)![SPSS](https://img.shields.io/badge/-SPSS-0057A7?style=flat-square)![LaTeX](https://img.shields.io/badge/-LaTeX-008080?style=flat-square&logo=latex&logoColor=white)![Jupyter](https://img.shields.io/badge/-Jupyter-F37626?style=flat-square&logo=jupyter&logoColor=white)![R Markdown](https://img.shields.io/badge/-R%20Markdown-276DC3?style=flat-square&logo=rstudio&logoColor=white)![Matlab](https://img.shields.io/badge/-MATLAB-0076A8?style=flat-square&logo=mathworks&logoColor=white)
 
 ### Methodologies  
 `Econometrics` &nbsp; `Time-Series Forecasting` &nbsp; `Clustering & Classification` &nbsp; `Agile Workflow` &nbsp; `Digital Project Management`
