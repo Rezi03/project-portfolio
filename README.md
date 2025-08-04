@@ -2,7 +2,7 @@
 
 Welcome to my personal portfolio. I'm currently pursuing a Master's degree in Economic Policy and Statistical Evaluation at the University of Reims Champagne-Ardenne. This space showcases a curated selection of academic projects in data analysis, statistical modeling, forecasting, and data visualization.
 
-My academic journey combines economic insight with technical proficiency, and I am particularly interested in applying data-driven solutions in the **banking and financial sectors**, with the goal of pursuing a career in the **United States**.
+My academic journey combines economic insight with technical proficiency, and I am particularly interested in applying data-driven solutions in the banking and financial sectors.
 
 ---
 
@@ -36,16 +36,24 @@ This group project involved developing an interactive Python application to expl
 ## Skills & Tools
 
 ### Languages  
-`Python` &nbsp; `R` &nbsp; `SQL` &nbsp; `VBA` &nbsp; `SAS` &nbsp; `HTML` &nbsp; `Java`
+
+[![Python](https://img.shields.io/badge/-Python-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![HTML5](https://img.shields.io/badge/-HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/Guide/HTML/HTML5)
+![SQL](https://img.shields.io/badge/-SQL-4479A1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Java](https://img.shields.io/badge/-Java-007396?style=for-the-badge&logo=java&logoColor=white)](https://www.java.com/)
+![VBA](https://img.shields.io/badge/-VBA-867DB1?style=for-the-badge&logo=microsoft-visual-basic&logoColor=white)](https://learn.microsoft.com/en-us/office/vba/api/overview/excel)  
+[![R](https://img.shields.io/badge/-R-276DC3?style=for-the-badge&logo=r&logoColor=white)](https://www.r-project.org/) 
+[![SAS](https://img.shields.io/badge/-SAS-1B365D?style=for-the-badge&logo=sas&logoColor=white)](https://www.sas.com/)  
 
 ### Tools  
-- ![Power BI](https://img.shields.io/badge/-Power%20BI-F2C811?style=flat-square&logo=powerbi&logoColor=black)  
-- ![Git](https://img.shields.io/badge/-Git-F05032?style=flat-square&logo=git&logoColor=white)  
-- ![SPSS](https://img.shields.io/badge/-SPSS-0057A7?style=flat-square)  
-- ![LaTeX](https://img.shields.io/badge/-LaTeX-008080?style=flat-square&logo=latex&logoColor=white)  
-- ![Jupyter](https://img.shields.io/badge/-Jupyter-F37626?style=flat-square&logo=jupyter&logoColor=white)  
-- ![R Markdown](https://img.shields.io/badge/-R%20Markdown-276DC3?style=flat-square&logo=rstudio&logoColor=white)  
-- ![Matlab](https://img.shields.io/badge/-MATLAB-0076A8?style=flat-square&logo=mathworks&logoColor=white)
+
+![Power BI](https://img.shields.io/badge/-Power%20BI-F2C811?style=flat-square&logo=powerbi&logoColor=black)  
+![Git](https://img.shields.io/badge/-Git-F05032?style=flat-square&logo=git&logoColor=white)  
+![SPSS](https://img.shields.io/badge/-SPSS-0057A7?style=flat-square)  
+![LaTeX](https://img.shields.io/badge/-LaTeX-008080?style=flat-square&logo=latex&logoColor=white)  
+![Jupyter](https://img.shields.io/badge/-Jupyter-F37626?style=flat-square&logo=jupyter&logoColor=white)  
+![R Markdown](https://img.shields.io/badge/-R%20Markdown-276DC3?style=flat-square&logo=rstudio&logoColor=white)  
+![Matlab](https://img.shields.io/badge/-MATLAB-0076A8?style=flat-square&logo=mathworks&logoColor=white)
 
 ### Methodologies  
 `Econometrics` &nbsp; `Time-Series Forecasting` &nbsp; `Clustering & Classification` &nbsp; `Agile Workflow` &nbsp; `Digital Project Management`
