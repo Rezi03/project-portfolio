@@ -1,0 +1,165 @@
+Structure de la base de données d'origine
+  
+    - 2394 colonnes de type "character" (texte ou des chaînes de caractères)
+    - 1532 colonnes de type "integer" (nombres entiers)
+    - 192 colonnes de type "logical" (valeurs booléennes pour exprimer la logique, ici pour NA ?)
+    
+
+Les visiteurs uniques
+
+  - Nombre de visiteurs uniques : 2340 
+  - Nombre total de visites (lignes) : 2870 
+  - Nombre de doublons : 530 
+  
+
+Les durées (moyenne, min, max) par visiteur unique
+
+On prend en compte les colonnes "timeSpent", il y en à 218 au total 0 à 217
+
+  - Nombre de colonnes détectées pour 'timeSpent' sans 'Pretty': 218 
+
+On prend la colonne "fingerprint", qui représente un identifiant unique lié à un utilisateur, pour sommer les doublons ensemble
+
+  - Durée moyenne des visites : 5 min 17.6961538461538 sec 
+  - Durée minimale des visites : 0 min 0 sec 
+  - Durée maximale des visites : 294 min 27 sec
+
+
+Les 10 utilisateurs qui ont passé le plus de temps sur le site 
+
+  - Utilisateur Fingerprint: 582ba38ae180f276  - Temps total: 294 min 27 sec 
+  - Utilisateur Fingerprint: b208689ea00d19fd  - Temps total: 150 min 4 sec 
+  - Utilisateur Fingerprint: 8115352fbc9511ae  - Temps total: 141 min 14 sec 
+  - Utilisateur Fingerprint: 3d72f31296eb5350  - Temps total: 130 min 20 sec 
+  - Utilisateur Fingerprint: f42100085f997d19  - Temps total: 126 min 40 sec 
+  - Utilisateur Fingerprint: b040ca0892b0397f  - Temps total: 121 min 1 sec 
+  - Utilisateur Fingerprint: bdcafb1b96af41ee  - Temps total: 116 min 6 sec 
+  - Utilisateur Fingerprint: 43a95ede96f1bdbc  - Temps total: 103 min 14 sec 
+  - Utilisateur Fingerprint: 547fca5689dedcc6  - Temps total: 102 min 33 sec 
+  - Utilisateur Fingerprint: e7a3dc9b4a53e8a7  - Temps total: 101 min 6 sec 
+
+
+Nombre d'utilisateurs distincts ayant passé 0 min sur le site
+
+  - Nombre d'utilisateurs distincts ayant passé 0 min sur le site : 1104 (fausse la moyenne ?)
+  
+
+Uniquement les individus dont le temps est supérieur à 0 
+
+  - Durée moyenne des visites (temps > 0) : 7 min 20.4081753554502 sec 
+  - Durée minimale des visites (temps > 0) : 0 min 1 sec 
+  - Durée maximale des visites (temps > 0) : 149 min 27 sec 
+
+
+Nombre d'individus ayant moins de 2 minutes sur le site
+
+  - Nombre d'individus ayant passé moins de 2 minutes sur le site : 1990 (3/4 de la population)
+  
+
+Uniquement les individus dont le temps est supérieur à 2 min 
+
+  - Durée moyenne pour les utilisateurs ayant passé plus de 2 minutes : 13 min 23.1262798634813 sec 
+  - Durée minimale pour les utilisateurs ayant passé plus de 2 minutes : 2 min 1 sec 
+  - Durée maximale pour les utilisateurs ayant passé plus de 2 minutes : 149 min 27 sec 
+
+
+Nombre de pages vues
+
+On prend en compte les colonnes "pageIdAction", il y en à 218
+
+On utilise la colonne "idVisit", qui représente l'identifiant unique d'une visite.
+
+  - Nombre de colonnes commençant par pageIdAction 218 
+  
+On somme le total, par ligne. Pour les 10 premières visites avec le plus grand nombre total de pages vues :
+
+   idVisit pageIdAction_total
+     <int>              <dbl>
+ 1    2430             108871
+ 2    2549              35502
+ 3    2764              35481
+ 4    2654              33612
+ 5    2668              27194
+ 6    2617              26862
+ 7    2829              24626
+ 8    2542              24622
+ 9    2582              21099
+10    2619              20926
+
+On peut extraire les "fingerprint" associés aux 10 premières visites
+
+        fingerprint idVisit pageIdAction_total
+1  d2476ab7a76f83d3    2829              24626
+2  e7a3dc9b4a53e8a7    2764              35481
+3  7fa411c9015bb3b7    2668              27194
+4  52d220e2baf35aae    2654              33612
+5  81dbd112be2e6bbf    2619              20926
+6  d3861a0a70b11faf    2617              26862
+7  03e5779241bcd34a    2582              21099
+8  c7ca01532f980b77    2549              35502
+9  e11503c4d6edb9ff    2542              24622
+10 b208689ea00d19fd    2430             108871
+
+
+Le cheminement
+
+On utilise uniqement les colonnes "pageTitle"
+  ↳ Nettoyage élémentaire
+  
+Le cheminement le plus fréquent + nombre d'occurrences
+
+ 1 "Éducapacités | Pour ton bien-être émotionnel, relationnel et scolaire ! |  |  |  |  |  |  |  |  |  |  …   525
+ 2 "Formulaire Expérimentation | Éducapacités |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  …   160
+ 3 "En Classe / En Centre | Éducapacités |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | …    64
+ 4 "Concentration | Éducapacités |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |…    49
+ 5 "8 – 13 ans | Éducapacités |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |…    39
+ 6 "Ecrans | Éducapacités |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | …    38
+ 7 "Éducapacités | Pour ton bien-être émotionnel, relationnel et scolaire ! | Éducapacités | Pour ton bien…    34
+ 8 "Éducapacités | Pour ton bien-être émotionnel, relationnel et scolaire ! | Motivation | Éducapacités | …    26
+ 9 "Reprise Premiere Commande | Éducapacités |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |…    25
+10 "Éducapacités | Pour ton bien-être émotionnel, relationnel et scolaire ! | 8 – 13 ans | Éducapacités | …    24
+
+
+Cheminement identique par visiteur ? 
+
+Les cheminements répétés par individu
+
+   fingerprint      combined_path                                                                           count
+   <chr>            <chr>                                                                                   <int>
+ 1 57c1dbbe5fc6c380 "Qui sommes nous | Éducapacités |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  …     4
+ 2 2722f9d0f229c468 "Ecrans | Éducapacités |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  …     3
+ 3 794bce8a589da93a "Motivation | Éducapacités |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  | …     3
+ 4 7f065f927184b555 "A la maison | Éducapacités |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |…     3
+ 5 85c00ef6cd2520d9 "Éducapacités | Pour ton bien-être émotionnel, relationnel et scolaire ! |  |  |  |  |…     3
+ 6 bba6fe6a51d1f9a8 "Éducapacités | Pour ton bien-être émotionnel, relationnel et scolaire ! |  |  |  |  |…     3
+ 7 e9f7868e1e02e6f8 "Qui sommes nous | Éducapacités |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  …     3
+ 8 0da48e159eeb0f11 "Colere | Éducapacités |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  …     2
+ 9 0e1ebef3180b265f "En Classe / En Centre | Éducapacités |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  …     2
+10 0e744b974b16ba40 "Oral jury | Éducapacités |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  …     2
+
+
+Temps par action
+
+Les colonnes "timeSpent" + moyenne pour chacune
+
+  - Les 10 premières moyennes : 
+
+   column                         mean
+   <chr>                         <dbl>
+ 1 timeSpent..actionDetails.199.  358 
+ 2 timeSpent..actionDetails.102.  329 
+ 3 timeSpent..actionDetails.215.  294 
+ 4 timeSpent..actionDetails.46.   291 
+ 5 timeSpent..actionDetails.48.   269.
+ 6 timeSpent..actionDetails.55.   222.
+ 7 timeSpent..actionDetails.60.   165 
+ 8 timeSpent..actionDetails.44.   142.
+ 9 timeSpent..actionDetails.42.   137.
+10 timeSpent..actionDetails.70.   128 
+
+
+Utilisation d'un clustering 
+
+Graphique
+
+
