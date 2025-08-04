@@ -69,6 +69,8 @@ This group project involved developing an interactive Python application to expl
 
 - **Email**: rezisabashvili1@gmail.com  
 - **Phone**: +33 6 18 57 91 73  
+- **LinkedIn**: www.linkedin.com/in/rezisabashvili
+- **Portfolio**: https://rezi03.github.io/portfolio/index.html
 
 ---
 
