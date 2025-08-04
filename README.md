@@ -38,28 +38,9 @@ This group project involved developing an interactive Python application to expl
 ### Languages
 
 <p align="left">
-  <a href="https://www.python.org/" target="_blank">
-    <img src="https://img.shields.io/badge/-Python-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
-  </a>
-  <a href="https://developer.mozilla.org/en-US/docs/Web/Guide/HTML/HTML5" target="_blank">
-    <img src="https://img.shields.io/badge/-HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white" alt="HTML5" />
-  </a>
-  <a href="https://www.postgresql.org/" target="_blank">
-    <img src="https://img.shields.io/badge/-SQL-4479A1?style=for-the-badge&logo=postgresql&logoColor=white" alt="SQL" />
-  </a>
-  <a href="https://www.java.com/" target="_blank">
-    <img src="https://img.shields.io/badge/-Java-007396?style=for-the-badge&logo=java&logoColor=white" alt="Java" />
-  </a>
-  <a href="https://learn.microsoft.com/en-us/office/vba/api/overview/excel" target="_blank">
-    <img src="https://img.shields.io/badge/-VBA-867DB1?style=for-the-badge&logo=microsoft&logoColor=white" alt="VBA" />
-  </a>
-  <a href="https://www.r-project.org/" target="_blank">
-    <img src="https://img.shields.io/badge/-R-276DC3?style=for-the-badge&logo=r&logoColor=white" alt="R" />
-  </a>
-  <a href="https://www.sas.com/" target="_blank">
-    <img src="https://img.shields.io/badge/-SAS-1B365D?style=for-the-badge&logo=sas&logoColor=white" alt="SAS" />
-  </a>
+  <a href="https://www.python.org/" target="_blank"><img src="https://img.shields.io/badge/-Python-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" /></a><a href="https://developer.mozilla.org/en-US/docs/Web/Guide/HTML/HTML5" target="_blank"><img src="https://img.shields.io/badge/-HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white" alt="HTML5" /></a><a href="https://www.postgresql.org/" target="_blank"><img src="https://img.shields.io/badge/-SQL-4479A1?style=for-the-badge&logo=postgresql&logoColor=white" alt="SQL" /></a><a href="https://www.java.com/" target="_blank"><img src="https://img.shields.io/badge/-Java-007396?style=for-the-badge&logo=java&logoColor=white" alt="Java" /></a><a href="https://learn.microsoft.com/en-us/office/vba/api/overview/excel" target="_blank"><img src="https://img.shields.io/badge/-VBA-867DB1?style=for-the-badge&logo=microsoft&logoColor=white" alt="VBA" /></a><a href="https://www.r-project.org/" target="_blank"><img src="https://img.shields.io/badge/-R-276DC3?style=for-the-badge&logo=r&logoColor=white" alt="R" /></a><a href="https://www.sas.com/" target="_blank"><img src="https://img.shields.io/badge/-SAS-1B365D?style=for-the-badge&logo=sas&logoColor=white" alt="SAS" /></a>
 </p>
+
 
 ---
 
