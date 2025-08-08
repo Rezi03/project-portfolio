@@ -431,113 +431,106 @@ if tab == "Dashboard":
             st.markdown("**Automated summary:**")
             st.code(auto_text, language="text")
 
-# PDF EXPORT
-st.markdown("### Generate a structured PDF report")
-generate_col1, generate_col2 = st.columns([3, 1])
-with generate_col1:
-    st.info("Report includes: cover, key metrics, automated summary, and embedded charts.")
-with generate_col2:
-    if st.button("Generate PDF Report", key=f"gen_pdf_{ticker}", help="Create and download a structured PDF report"):
-        figs_to_save = [
-            ("price", fig_price, "Price"),
-            ("sma", fig_sma if 'fig_sma' in locals() else None, "Price with SMAs"),
-            ("rsi", fig_rsi if 'fig_rsi' in locals() else None, "RSI (14)"),
-            ("vol", fig_roll, "Rolling Volatility"),
-            ("equity", fig_eq, "Equity Curve"),
-            ("hist", fig_hist, "Daily Returns Distribution")
-        ]
-        tmp_files = []
-        try:
-            # Sauvegarde images temporaires
-            for name, fig, title in figs_to_save:
-                img_bytes = None
-                if fig is not None:
+            # PDF EXPORT
+            st.markdown("### Generate a structured PDF report")
+            generate_col1, generate_col2 = st.columns([3, 1])
+            with generate_col1:
+                st.info("Report includes: cover, key metrics, automated summary, and embedded charts.")
+            with generate_col2:
+                if st.button("Generate PDF Report", key=f"gen_pdf_{ticker}", help="Create and download a structured PDF report"):
+                    figs_to_save = [
+                        ("price", fig_price, "Price"),
+                        ("sma", fig_sma if 'fig_sma' in locals() else None, "Price with SMAs"),
+                        ("rsi", fig_rsi if 'fig_rsi' in locals() else None, "RSI (14)"),
+                        ("vol", fig_roll, "Rolling Volatility"),
+                        ("equity", fig_eq, "Equity Curve"),
+                        ("hist", fig_hist, "Daily Returns Distribution")
+                    ]
+                    tmp_files = []
                     try:
-                        import kaleido  # noqa
-                        img_bytes = fig.to_image(format="png")
-                    except Exception:
-                        img_bytes = render_chart_bytes(name, fig_obj=None, df=df, title=title)
-                else:
-                    img_bytes = render_chart_bytes(name, fig_obj=None, df=df, title=title)
+                        for name, fig, title in figs_to_save:
+                            img_bytes = None
+                            if fig is not None:
+                                try:
+                                    import kaleido  # noqa
+                                    img_bytes = fig.to_image(format="png")
+                                except Exception:
+                                    img_bytes = render_chart_bytes(name, fig_obj=None, df=df, title=title)
+                            else:
+                                img_bytes = render_chart_bytes(name, fig_obj=None, df=df, title=title)
 
-                if not img_bytes:
-                    img_bytes = create_placeholder_png(f"{title} - no image")
+                            if not img_bytes:
+                                img_bytes = create_placeholder_png(f"{title} - no image")
 
-                tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
-                tmp.write(img_bytes)
-                tmp.flush()
-                tmp_files.append(tmp.name)
-                tmp.close()
+                            tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
+                            tmp.write(img_bytes)
+                            tmp.flush()
+                            tmp_files.append(tmp.name)
+                            tmp.close()
 
-            # Création PDF
-            pdf = FPDF(unit="pt", format="A4")
-            FONT_PATH = os.path.join(os.path.dirname(__file__), "fonts", "DejaVuSans.ttf")
-            pdf.add_font("DejaVu", "", FONT_PATH, uni=True)
-            pdf.set_auto_page_break(auto=True, margin=36)
+                        pdf = FPDF(unit="pt", format="A4")
+                        FONT_PATH = os.path.join(os.path.dirname(__file__), "fonts", "DejaVuSans.ttf")
+                        pdf.add_font("DejaVu", "", FONT_PATH, uni=True)
+                        pdf.set_auto_page_break(auto=True, margin=36)
 
-            # --- PAGE DE COUVERTURE ---
-            pdf.add_page()
-            pdf.set_font("DejaVu", size=20, style="B")
-            pdf.cell(0, 40, f"{bank} - Financial Report", ln=True, align="C")
-            pdf.set_font("DejaVu", size=12)
-            pdf.ln(10)
-            pdf.multi_cell(0, 14, f"Report generated: {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}", align="C")
-            pdf.multi_cell(0, 14, f"Period: {period} | Interval: {interval}", align="C")
+                        pdf.add_page()
+                        pdf.set_font("DejaVu", size=20, style="B")
+                        pdf.cell(0, 40, f"{bank} - Financial Report", ln=True, align="C")
+                        pdf.set_font("DejaVu", size=12)
+                        pdf.ln(10)
+                        pdf.multi_cell(0, 14, f"Report generated: {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}", align="C")
+                        pdf.multi_cell(0, 14, f"Period: {period} | Interval: {interval}", align="C")
 
-            # --- METRICS ---
-            pdf.add_page()
-            pdf.set_font("DejaVu", size=14, style="B")
-            pdf.cell(0, 18, "Key Metrics", ln=True)
-            pdf.set_font("DejaVu", size=10)
-            pdf.ln(6)
-            market_cap_str = f"{market_cap:,}" if market_cap else "N/A"
-            pdf.cell(0, 12, f"Last Price: {last_price:.2f} USD", ln=True)
-            pdf.cell(0, 12, f"Market Cap: {market_cap_str}", ln=True)
-            pdf.cell(0, 12, f"CAGR: {cagr_val*100:.2f}%" if not np.isnan(cagr_val) else "CAGR: N/A", ln=True)
-            pdf.cell(0, 12, f"Annualized Return: {annual_ret*100:.2f}%" if not np.isnan(annual_ret) else "Annualized Return: N/A", ln=True)
-            pdf.cell(0, 12, f"Annual Volatility: {vol*100:.2f}%" if not np.isnan(vol) else "Annual Volatility: N/A", ln=True)
-            pdf.cell(0, 12, f"Sharpe Ratio: {sharpe:.2f}" if not np.isnan(sharpe) else "Sharpe Ratio: N/A", ln=True)
-            pdf.cell(0, 12, f"Sortino Ratio: {sortino:.2f}" if not np.isnan(sortino) else "Sortino Ratio: N/A", ln=True)
-            pdf.cell(0, 12, f"Max Drawdown: {max_dd*100:.2f}%" if not np.isnan(max_dd) else "Max Drawdown: N/A", ln=True)
-            pdf.cell(0, 12, f"Beta vs S&P500: {beta:.2f}" if not np.isnan(beta) else "Beta vs S&P500: N/A", ln=True)
-            pdf.cell(0, 12, f"Alpha (ann.): {alpha_ann*100:.2f}%" if not np.isnan(alpha_ann) else "Alpha (ann.): N/A", ln=True)
-            pdf.cell(0, 12, f"VaR 95%: {var95*100:.2f}%" if not np.isnan(var95) else "VaR 95%: N/A", ln=True)
+                        pdf.add_page()
+                        pdf.set_font("DejaVu", size=14, style="B")
+                        pdf.cell(0, 18, "Key Metrics", ln=True)
+                        pdf.set_font("DejaVu", size=10)
+                        pdf.ln(6)
+                        market_cap_str = f"{market_cap:,}" if market_cap else "N/A"
+                        pdf.cell(0, 12, f"Last Price: {last_price:.2f} USD", ln=True)
+                        pdf.cell(0, 12, f"Market Cap: {market_cap_str}", ln=True)
+                        pdf.cell(0, 12, f"CAGR: {cagr_val*100:.2f}%" if not np.isnan(cagr_val) else "CAGR: N/A", ln=True)
+                        pdf.cell(0, 12, f"Annualized Return: {annual_ret*100:.2f}%" if not np.isnan(annual_ret) else "Annualized Return: N/A", ln=True)
+                        pdf.cell(0, 12, f"Annual Volatility: {vol*100:.2f}%" if not np.isnan(vol) else "Annual Volatility: N/A", ln=True)
+                        pdf.cell(0, 12, f"Sharpe Ratio: {sharpe:.2f}" if not np.isnan(sharpe) else "Sharpe Ratio: N/A", ln=True)
+                        pdf.cell(0, 12, f"Sortino Ratio: {sortino:.2f}" if not np.isnan(sortino) else "Sortino Ratio: N/A", ln=True)
+                        pdf.cell(0, 12, f"Max Drawdown: {max_dd*100:.2f}%" if not np.isnan(max_dd) else "Max Drawdown: N/A", ln=True)
+                        pdf.cell(0, 12, f"Beta vs S&P500: {beta:.2f}" if not np.isnan(beta) else "Beta vs S&P500: N/A", ln=True)
+                        pdf.cell(0, 12, f"Alpha (ann.): {alpha_ann*100:.2f}%" if not np.isnan(alpha_ann) else "Alpha (ann.): N/A", ln=True)
+                        pdf.cell(0, 12, f"VaR 95%: {var95*100:.2f}%" if not np.isnan(var95) else "VaR 95%: N/A", ln=True)
 
-            # --- RÉSUMÉ AUTOMATIQUE ---
-            pdf.ln(10)
-            pdf.set_font("DejaVu", size=12, style="B")
-            pdf.cell(0, 14, "Automated Summary", ln=True)
-            pdf.set_font("DejaVu", size=10)
-            pdf.multi_cell(0, 12, auto_text)
+                        pdf.ln(10)
+                        pdf.set_font("DejaVu", size=12, style="B")
+                        pdf.cell(0, 14, "Automated Summary", ln=True)
+                        pdf.set_font("DejaVu", size=10)
+                        pdf.multi_cell(0, 12, auto_text)
 
-            # --- GRAPHIQUES ---
-            for path in tmp_files:
-                pdf.add_page()
-                pdf.set_font("DejaVu", size=12, style="B")
-                pdf.cell(0, 14, f"Chart: {os.path.basename(path)}", ln=True)
-                page_width = pdf.w - 72
-                try:
-                    pdf.image(path, x=36, y=60, w=page_width)
-                except Exception:
-                    pdf.set_font("DejaVu", size=10)
-                    pdf.cell(0, 12, f"Chart {os.path.basename(path)} could not be embedded.", ln=True)
+                        for path in tmp_files:
+                            pdf.add_page()
+                            pdf.set_font("DejaVu", size=12, style="B")
+                            pdf.cell(0, 14, f"Chart: {os.path.basename(path)}", ln=True)
+                            page_width = pdf.w - 72
+                            try:
+                                pdf.image(path, x=36, y=60, w=page_width)
+                            except Exception:
+                                pdf.set_font("DejaVu", size=10)
+                                pdf.cell(0, 12, f"Chart {os.path.basename(path)} could not be embedded.", ln=True)
 
-            # Sauvegarde
-            pdf_bytes = pdf.output(dest="S").encode("latin1", "ignore")
-            st.download_button(
-                label="Download PDF",
-                data=pdf_bytes,
-                file_name=f"{ticker}_financial_report.pdf",
-                mime="application/pdf",
-                key=f"download_pdf_{ticker}"
-            )
+                        pdf_bytes = pdf.output(dest="S").encode("latin1", "ignore")
+                        st.download_button(
+                            label="Download PDF",
+                            data=pdf_bytes,
+                            file_name=f"{ticker}_financial_report.pdf",
+                            mime="application/pdf",
+                            key=f"download_pdf_{ticker}"
+                        )
 
-        finally:
-            for p in tmp_files:
-                try:
-                    os.remove(p)
-                except Exception:
-                    pass
+                    finally:
+                        for p in tmp_files:
+                            try:
+                                os.remove(p)
+                            except Exception:
+                                pass
 
     else:  # Comparison mode
         banks = st.sidebar.multiselect("Select banks", list(TICKERS.keys()), default=["Goldman Sachs", "Morgan Stanley"])
