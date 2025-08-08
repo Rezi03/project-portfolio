@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Live Banking Market Dashboard</title>
+  <link rel="stylesheet" href="../style.css" />
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:#f7f7f8; color:#0b0b0b; margin:0; padding:40px; }
+    .container { max-width:1100px; margin:0 auto; }
+    .card { background:#ffffff; border-radius:14px; box-shadow: 0 8px 24px rgba(15,15,15,0.06); padding:28px; }
+    .buttons { margin-top:18px; display:flex; gap:12px; }
+    .btn { background:#0b5fff; color:white; padding:10px 16px; text-decoration:none; border-radius:10px; font-weight:600; }
+    .muted { color:#6b6b6b; margin-top:8px; }
+    .preview { margin-top:20px; border-radius:10px; overflow:hidden; }
+    iframe { width:100%; border:0; height:800px; display:block; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>Live Banking Market Dashboard</h1>
+      <p class="muted">Interactive dashboard for major banks (Goldman Sachs, Morgan Stanley, J.P. Morgan, Citi, Bank of America, Barclays). Live prices, key metrics, technical indicators and short newsfeed.</p>
+      <div class="buttons">
+        <a class="btn" href="YOUR_STREAMLIT_URL" target="_blank" rel="noopener">Open live demo</a>
+        <a class="btn" style="background:#111111" href="https://github.com/<Rezi03>/finance-dashboard" target="_blank" rel="noopener">View source on GitHub</a>
+      </div>
+
+      <div class="preview">
+        <!-- Optional: iframe embed. If embed blocked, user can open live demo -->
+        <iframe src="YOUR_STREAMLIT_URL" title="Live Banking Dashboard"></iframe>
+      </div>
+
+      <h3 style="margin-top:22px;">Quick notes</h3>
+      <ul>
+        <li>Data source: Yahoo Finance (yfinance).</li>
+        <li>News: NewsAPI (configure key in Streamlit secrets).</li>
+        <li>Built with Streamlit, Plotly and Pandas. Export CSV or short PDF summaries.</li>
+      </ul>
+    </div>
+  </div>
+</body>
+</html>
