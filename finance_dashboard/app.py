@@ -1,4 +1,4 @@
-# app.py - Banking Market Intelligence Dashboard (enhanced)
+# app.py - Banking Market Intelligence Dashboard (final)
 import streamlit as st
 import yfinance as yf
 import pandas as pd
@@ -30,7 +30,6 @@ TICKERS = {
     "Barclays (LSE)": "BARC.L"
 }
 BENCHMARK = "^GSPC"  # S&P 500 as benchmark
-VIX = "^VIX"
 
 NEWS_API_KEY = st.secrets.get("NEWSAPI_KEY") if "NEWSAPI_KEY" in st.secrets else None
 
@@ -94,7 +93,7 @@ def max_drawdown(df):
 def rolling_volatility(df, window=21):
     returns = df['Close'].pct_change().dropna()
     if returns.empty:
-        return pd.Series(dtype=float)
+        return np.Series(dtype=float)
     return returns.rolling(window).std() * np.sqrt(252)
 
 def sharpe_ratio(df, risk_free_rate=0.02):
@@ -111,7 +110,6 @@ def sortino_ratio(df, risk_free_rate=0.02, period=252):
     excess = returns - (risk_free_rate / period)
     negative_returns = returns[returns < 0]
     if negative_returns.empty:
-        # No downside volatility -> treat as very good (but avoid inf)
         return np.nan
     downside_std = negative_returns.std()
     if downside_std == 0:
@@ -139,10 +137,6 @@ def value_at_risk(df, confidence=0.95):
     return -np.percentile(returns, (1 - confidence) * 100)
 
 def alpha_annualized(df, benchmark_df, risk_free_rate=0.02):
-    """
-    Compute alpha by regressing asset excess returns on benchmark excess returns.
-    We use a simple linear regression intercept as alpha (daily), then annualize.
-    """
     try:
         r_stock = df['Close'].pct_change().dropna()
         r_bench = benchmark_df['Close'].pct_change().dropna()
@@ -151,21 +145,16 @@ def alpha_annualized(df, benchmark_df, risk_free_rate=0.02):
             return np.nan
         y = joined.iloc[:,0] - (risk_free_rate / 252)
         x = joined.iloc[:,1] - (risk_free_rate / 252)
-        # Add constant intercept
         X = np.vstack([np.ones(len(x)), x]).T
         coef, residuals, rank, s = np.linalg.lstsq(X, y, rcond=None)
-        intercept = coef[0]  # daily alpha
-        alpha_ann = intercept * 252  # annualize
+        intercept = coef[0]
+        alpha_ann = intercept * 252
         return alpha_ann
     except Exception:
         return np.nan
 
 # --- BACKTEST / EQUITY CURVE ---
 def simulate_investment(df, initial_capital=1.0):
-    """
-    Simulate investing 1 unit at the start and holding until the end (buy-and-hold)
-    Returns a series representing equity curve (cumulative product of returns).
-    """
     returns = df['Close'].pct_change().fillna(0)
     equity = (1 + returns).cumprod()
     return equity
@@ -187,7 +176,7 @@ def generate_alerts(df):
             alerts.append("Price below SMA200 → bearish long-term signal")
 
         vol = rolling_volatility(df, window=21)
-        if not vol.empty and vol.iloc[-1] > 0.6:  # 60% annual vol is high (threshold adjustable)
+        if not vol.empty and vol.iloc[-1] > 0.6:  # threshold adjustable
             alerts.append("High annualized volatility (>60%)")
     except Exception:
         pass
@@ -206,7 +195,7 @@ def get_news(query):
     except Exception:
         return []
 
-# --- Matplotlib fallback helpers (same idea as before) ---
+# --- Matplotlib fallback helpers ---
 def create_placeholder_png(message="Chart not available"):
     buf = BytesIO()
     plt.figure(figsize=(8, 3))
@@ -300,9 +289,171 @@ def render_chart_bytes(name, fig_obj=None, df=None, title="Chart"):
             buf.seek(0)
             return buf.getvalue()
 
+        if name == "hist":
+            returns = df['Close'].pct_change().dropna()
+            plt.figure(figsize=(8,3))
+            plt.hist(returns, bins=50)
+            plt.title(title)
+            plt.grid(True)
+            plt.tight_layout()
+            plt.savefig(buf, format='png', bbox_inches='tight')
+            plt.close()
+            buf.seek(0)
+            return buf.getvalue()
+
         return create_placeholder_png(f"{name} - chart type not handled")
     except Exception as e:
         return create_placeholder_png(f"Render error: {str(e)[:80]}")
+
+# ---------------------------
+# Rule-based automated analysis
+# ---------------------------
+def generate_analysis(df, metrics, rf_rate=0.02):
+    """
+    df : DataFrame (with Close, RSI, SMA50, SMA200, RollingVol21 fields if available)
+    metrics : dict with keys like 'annual_ret','vol','sharpe','sortino','beta','alpha','var95','cagr','max_dd'
+    Returns : (analysis_text, analysis_bullets)
+    """
+    def fmt_ratio(x):
+        try:
+            return f"{x:.2f}"
+        except Exception:
+            return "N/A"
+    def fmt_pct(x):
+        try:
+            return f"{x*100:.2f}%"
+        except Exception:
+            return "N/A"
+
+    annual_ret = metrics.get("annual_ret", np.nan)
+    vol = metrics.get("vol", np.nan)
+    sharpe = metrics.get("sharpe", np.nan)
+    sortino = metrics.get("sortino", np.nan)
+    beta = metrics.get("beta", np.nan)
+    alpha = metrics.get("alpha", np.nan)
+    var95 = metrics.get("var95", np.nan)
+    cagr_val = metrics.get("cagr", np.nan)
+    max_dd = metrics.get("max_dd", np.nan)
+
+    bullets = []
+    score = 0
+
+    # Trend (SMA cross)
+    try:
+        if 'SMA50' in df.columns and 'SMA200' in df.columns:
+            if df['SMA50'].iloc[-1] > df['SMA200'].iloc[-1]:
+                bullets.append("SMA50 > SMA200 → medium-term bullish trend.")
+                score += 1
+            else:
+                bullets.append("SMA50 < SMA200 → medium-term bearish trend.")
+                score -= 1
+    except Exception:
+        pass
+
+    # RSI
+    try:
+        if 'RSI' in df.columns:
+            rsi_now = df['RSI'].iloc[-1]
+            if rsi_now >= 70:
+                bullets.append(f"RSI ({rsi_now:.1f}) high → potential overbought condition.")
+                score -= 1
+            elif rsi_now <= 30:
+                bullets.append(f"RSI ({rsi_now:.1f}) low → potential oversold rebound.")
+                score += 1
+            else:
+                bullets.append(f"RSI ({rsi_now:.1f}) neutral.")
+    except Exception:
+        pass
+
+    # Volatility
+    try:
+        if not np.isnan(vol):
+            if vol > 0.6:
+                bullets.append(f"High annualized volatility ({vol*100:.1f}%) → elevated risk.")
+                score -= 1
+            elif vol < 0.15:
+                bullets.append(f"Low annualized volatility ({vol*100:.1f}%) → calm market.")
+                score += 1
+            else:
+                bullets.append(f"Moderate annualized volatility ({vol*100:.1f}%).")
+    except Exception:
+        pass
+
+    # Sharpe
+    try:
+        if not np.isnan(sharpe):
+            if sharpe > 1:
+                bullets.append(f"Sharpe ratio strong ({fmt_ratio(sharpe)}) → good risk-adjusted returns.")
+                score += 1
+            elif sharpe < 0.5:
+                bullets.append(f"Sharpe ratio weak ({fmt_ratio(sharpe)}) → low return per unit risk.")
+                score -= 1
+            else:
+                bullets.append(f"Sharpe ratio moderate ({fmt_ratio(sharpe)}).")
+    except Exception:
+        pass
+
+    # Sortino
+    try:
+        if not np.isnan(sortino):
+            bullets.append(f"Sortino ratio: {fmt_ratio(sortino)} (focuses on downside risk).")
+    except Exception:
+        pass
+
+    # VaR & Drawdown
+    try:
+        if not np.isnan(var95):
+            bullets.append(f"VaR 95%: {fmt_pct(var95)}.")
+        if not np.isnan(max_dd):
+            bullets.append(f"Max Drawdown: {fmt_pct(max_dd)} for the analyzed period.")
+            if max_dd < -0.3:
+                bullets.append("Drawdown > 30% historically → caution advised.")
+                score -= 1
+    except Exception:
+        pass
+
+    # Beta & Alpha
+    try:
+        if not np.isnan(beta):
+            bullets.append(f"Beta vs benchmark: {fmt_ratio(beta)} (market sensitivity).")
+        if not np.isnan(alpha):
+            bullets.append(f"Alpha (annualized): {fmt_pct(alpha)} (risk-adjusted outperformance).")
+            if alpha > 0.02:
+                bullets.append("Positive alpha >2% annualized → potential value-add.")
+                score += 1
+    except Exception:
+        pass
+
+    # CAGR / annual return
+    try:
+        if not np.isnan(cagr_val):
+            bullets.append(f"CAGR: {fmt_pct(cagr_val)}.")
+    except Exception:
+        pass
+
+    # Recommendation
+    recs = []
+    if score >= 2:
+        recs.append("Overall signal: Positive — consider cautious allocation.")
+    elif score <= -2:
+        recs.append("Overall signal: Negative — consider reducing exposure or hedging.")
+    else:
+        recs.append("Overall signal: Neutral — monitor indicators for confirmation.")
+
+    # Paragraph summary
+    parts = []
+    parts.append(f"Over the selected period the annualized return is {fmt_pct(annual_ret)} and annualized volatility is {fmt_pct(vol)}.")
+    if not np.isnan(sharpe):
+        parts.append(f"Sharpe: {fmt_ratio(sharpe)}.")
+    if not np.isnan(beta):
+        parts.append(f"Beta vs benchmark: {fmt_ratio(beta)}.")
+    if not np.isnan(alpha):
+        parts.append(f"Alpha (annualized): {fmt_pct(alpha)}.")
+    parts.append(recs[0])
+
+    analysis_text = " ".join(parts)
+    analysis_bullets = bullets + [""] + recs
+    return analysis_text, analysis_bullets
 
 # --- SIDEBAR UI ---
 st.sidebar.title("Controls")
@@ -312,7 +463,7 @@ st.sidebar.caption("Built with Streamlit, yfinance, Plotly")
 
 # --- MAIN ---
 if tab == "Dashboard":
-    st.markdown("<h1>Banking Market Intelligence Dashboard</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='font-family:-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto;'>Banking Market Intelligence Dashboard</h1>", unsafe_allow_html=True)
     mode = st.sidebar.radio("Mode", ["Single Bank", "Comparison"])
     period = st.sidebar.selectbox("Period", ["1mo", "3mo", "6mo", "1y", "5y"], index=3)
     interval = st.sidebar.selectbox("Interval", ["1d", "1wk"], index=0)
@@ -328,7 +479,6 @@ if tab == "Dashboard":
         if df.empty or 'Close' not in df.columns or df['Close'].isnull().all():
             st.error("No market data available for this bank and period.")
         else:
-            # compute benchmark
             benchmark_df = fetch_history(BENCHMARK, period, interval)
 
             # Technical indicators
@@ -407,33 +557,58 @@ if tab == "Dashboard":
                     st.warning(" | ".join(alerts))
 
             # Rolling volatility chart
+            if 'RollingVol21' not in df.columns:
+                df['RollingVol21'] = rolling_volatility(df, window=21)
             fig_roll = px.line(df, x='Date', y='RollingVol21', title="21-day Rolling Volatility (annualized)", template="plotly_white", height=220)
             st.plotly_chart(fig_roll, use_container_width=True)
 
-            # Auto-summary text (copyable)
-            summary = []
-            summary.append(f"{bank} — Period: {period}, Interval: {interval}")
+            # -------------------------
+            # Automated summary + rule-based analysis
+            # -------------------------
+            metrics_for_analysis = {
+                "annual_ret": annual_ret,
+                "vol": vol,
+                "sharpe": sharpe,
+                "sortino": sortino,
+                "beta": beta,
+                "alpha": alpha_ann,
+                "var95": var95,
+                "cagr": cagr_val,
+                "max_dd": max_dd
+            }
+
+            analysis_text, analysis_bullets = generate_analysis(df, metrics_for_analysis, rf_rate=rf_rate)
+
+            # UI display
+            st.markdown("**Automated numerical summary:**")
+            summary_lines = []
             if not np.isnan(annual_ret):
-                summary.append(f"Annualized return: {annual_ret*100:.2f}%")
+                summary_lines.append(f"Annualized return: {annual_ret*100:.2f}%")
             if not np.isnan(vol):
-                summary.append(f"Annualized volatility: {vol*100:.2f}%")
+                summary_lines.append(f"Annualized volatility: {vol*100:.2f}%")
             if not np.isnan(sharpe):
-                summary.append(f"Sharpe: {sharpe:.2f}")
+                summary_lines.append(f"Sharpe: {sharpe:.2f}")
             if not np.isnan(sortino):
-                summary.append(f"Sortino: {sortino:.2f}")
+                summary_lines.append(f"Sortino: {sortino:.2f}")
             if not np.isnan(beta):
-                summary.append(f"Beta vs S&P500: {beta:.2f}")
+                summary_lines.append(f"Beta vs S&P500: {beta:.2f}")
             if not np.isnan(alpha_ann):
-                summary.append(f"Alpha (annualized): {alpha_ann*100:.2f}%")
+                summary_lines.append(f"Alpha (annualized): {alpha_ann*100:.2f}%")
             if not np.isnan(var95):
-                summary.append(f"VaR 95%: {var95*100:.2f}%")
-            auto_text = " | ".join(summary)
-            st.markdown("**Automated summary:**")
+                summary_lines.append(f"VaR 95%: {var95*100:.2f}%")
+            auto_text = " | ".join(summary_lines)
             st.code(auto_text, language="text")
 
-            # PDF EXPORT
+            st.markdown("**Automated analysis (rule-based):**")
+            for b in analysis_bullets:
+                if b:
+                    st.write("- " + b)
+
+            # -------------------------
+            # PDF EXPORT (safe, DejaVu unicode)
+            # -------------------------
             st.markdown("### Generate a structured PDF report")
-            generate_col1, generate_col2 = st.columns([3, 1])
+            generate_col1, generate_col2 = st.columns([3,1])
             with generate_col1:
                 st.info("Report includes: cover, key metrics, automated summary, and embedded charts.")
             with generate_col2:
@@ -448,6 +623,7 @@ if tab == "Dashboard":
                     ]
                     tmp_files = []
                     try:
+                        # Render images
                         for name, fig, title in figs_to_save:
                             img_bytes = None
                             if fig is not None:
@@ -468,23 +644,44 @@ if tab == "Dashboard":
                             tmp_files.append(tmp.name)
                             tmp.close()
 
+                        # Build PDF
                         pdf = FPDF(unit="pt", format="A4")
                         FONT_PATH = os.path.join(os.path.dirname(__file__), "fonts", "DejaVuSans.ttf")
-                        pdf.add_font("DejaVu", "", FONT_PATH, uni=True)
+                        # Add DejaVu normal only (no bold variant required)
+                        try:
+                            pdf.add_font("DejaVu", "", FONT_PATH, uni=True)
+                        except Exception:
+                            # fallback: if font not found, proceed with default (may fail on accents)
+                            pass
                         pdf.set_auto_page_break(auto=True, margin=36)
 
+                        # Cover
                         pdf.add_page()
-                        pdf.set_font("DejaVu", size=20)
-                        pdf.cell(0, 40, f"{bank} - Financial Report", ln=True, align="C")
-                        pdf.set_font("DejaVu", size=12)
-                        pdf.ln(10)
-                        pdf.multi_cell(0, 14, f"Report generated: {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}", align="C")
-                        pdf.multi_cell(0, 14, f"Period: {period} | Interval: {interval}", align="C")
+                        # If DejaVu added, use it, else fallback to default
+                        try:
+                            pdf.set_font("DejaVu", size=18)
+                        except Exception:
+                            pdf.set_font("Helvetica", size=18)
+                        pdf.cell(0, 36, f"{bank} - Financial Report", ln=True, align="C")
+                        try:
+                            pdf.set_font("DejaVu", size=11)
+                        except Exception:
+                            pdf.set_font("Helvetica", size=11)
+                        pdf.ln(8)
+                        pdf.multi_cell(0, 12, f"Report generated: {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}", align="C")
+                        pdf.multi_cell(0, 12, f"Period: {period} | Interval: {interval}", align="C")
 
+                        # Metrics page
                         pdf.add_page()
-                        pdf.set_font("DejaVu", size=14)
-                        pdf.cell(0, 18, "Key Metrics", ln=True)
-                        pdf.set_font("DejaVu", size=10)
+                        try:
+                            pdf.set_font("DejaVu", size=14)
+                        except Exception:
+                            pdf.set_font("Helvetica", size=14)
+                        pdf.cell(0, 16, "Key Metrics", ln=True)
+                        try:
+                            pdf.set_font("DejaVu", size=10)
+                        except Exception:
+                            pdf.set_font("Helvetica", size=10)
                         pdf.ln(6)
                         market_cap_str = f"{market_cap:,}" if market_cap else "N/A"
                         pdf.cell(0, 12, f"Last Price: {last_price:.2f} USD", ln=True)
@@ -499,24 +696,58 @@ if tab == "Dashboard":
                         pdf.cell(0, 12, f"Alpha (ann.): {alpha_ann*100:.2f}%" if not np.isnan(alpha_ann) else "Alpha (ann.): N/A", ln=True)
                         pdf.cell(0, 12, f"VaR 95%: {var95*100:.2f}%" if not np.isnan(var95) else "VaR 95%: N/A", ln=True)
 
-                        pdf.ln(10)
-                        pdf.set_font("DejaVu", size=12)
-                        pdf.cell(0, 14, "Automated Summary", ln=True)
-                        pdf.set_font("DejaVu", size=10)
-                        pdf.multi_cell(0, 12, auto_text)
+                        # Automated summary
+                        pdf.ln(8)
+                        try:
+                            pdf.set_font("DejaVu", size=12)
+                        except Exception:
+                            pdf.set_font("Helvetica", size=12)
+                        pdf.cell(0, 12, "Automated numerical summary", ln=True)
+                        try:
+                            pdf.set_font("DejaVu", size=10)
+                        except Exception:
+                            pdf.set_font("Helvetica", size=10)
+                        pdf.multi_cell(0, 10, auto_text)
 
+                        pdf.ln(6)
+                        try:
+                            pdf.set_font("DejaVu", size=12)
+                        except Exception:
+                            pdf.set_font("Helvetica", size=12)
+                        pdf.cell(0, 12, "Automated analysis", ln=True)
+                        try:
+                            pdf.set_font("DejaVu", size=10)
+                        except Exception:
+                            pdf.set_font("Helvetica", size=10)
+                        for b in analysis_bullets:
+                            if b:
+                                pdf.multi_cell(0, 10, "- " + b)
+
+                        # Charts pages
                         for path in tmp_files:
                             pdf.add_page()
-                            pdf.set_font("DejaVu", size=12)
-                            pdf.cell(0, 14, f"Chart: {os.path.basename(path)}", ln=True)
+                            try:
+                                pdf.set_font("DejaVu", size=12)
+                            except Exception:
+                                pdf.set_font("Helvetica", size=12)
+                            pdf.cell(0, 12, f"Chart: {os.path.basename(path)}", ln=True)
                             page_width = pdf.w - 72
                             try:
                                 pdf.image(path, x=36, y=60, w=page_width)
                             except Exception:
-                                pdf.set_font("DejaVu", size=10)
+                                try:
+                                    pdf.set_font("DejaVu", size=10)
+                                except Exception:
+                                    pdf.set_font("Helvetica", size=10)
                                 pdf.cell(0, 12, f"Chart {os.path.basename(path)} could not be embedded.", ln=True)
+                        # Output bytes (latin1 ignore - robust)
+                        try:
+                            pdf_bytes = pdf.output(dest="S").encode("latin1", "ignore")
+                        except Exception:
+                            # Fallback to utf-8 encode if latin1 fails
+                            pdf_bytes = pdf.output(dest="S").encode("utf-8", "ignore")
 
-                        pdf_bytes = pdf.output(dest="S").encode("latin1", "ignore")
+                        # Download button
                         st.download_button(
                             label="Download PDF",
                             data=pdf_bytes,
