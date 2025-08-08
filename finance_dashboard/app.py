@@ -5,10 +5,13 @@ import pandas as pd
 import plotly.graph_objects as go
 import requests
 from io import BytesIO
+import streamlit as st
 from fpdf import FPDF
 
 # --- Page config
 st.set_page_config(page_title="Live Banking Market Dashboard", layout="wide", initial_sidebar_state="expanded")
+
+api_key = st.secrets["newsapi"]["api_key"]
 
 # --- Constants
 TICKERS = {
