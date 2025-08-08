@@ -482,7 +482,7 @@ if tab == "Dashboard":
                         pdf.multi_cell(0, 14, f"Period: {period} | Interval: {interval}", align="C")
 
                         pdf.add_page()
-                        pdf.set_font("DejaVu", size=14, style="B")
+                        pdf.set_font("DejaVu", size=14)
                         pdf.cell(0, 18, "Key Metrics", ln=True)
                         pdf.set_font("DejaVu", size=10)
                         pdf.ln(6)
@@ -500,14 +500,14 @@ if tab == "Dashboard":
                         pdf.cell(0, 12, f"VaR 95%: {var95*100:.2f}%" if not np.isnan(var95) else "VaR 95%: N/A", ln=True)
 
                         pdf.ln(10)
-                        pdf.set_font("DejaVu", size=12, style="B")
+                        pdf.set_font("DejaVu", size=12)
                         pdf.cell(0, 14, "Automated Summary", ln=True)
                         pdf.set_font("DejaVu", size=10)
                         pdf.multi_cell(0, 12, auto_text)
 
                         for path in tmp_files:
                             pdf.add_page()
-                            pdf.set_font("DejaVu", size=12, style="B")
+                            pdf.set_font("DejaVu", size=12)
                             pdf.cell(0, 14, f"Chart: {os.path.basename(path)}", ln=True)
                             page_width = pdf.w - 72
                             try:
