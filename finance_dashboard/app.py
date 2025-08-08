@@ -3,17 +3,20 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd
 import plotly.graph_objects as go
+import plotly.express as px
 import requests
 from io import BytesIO
-import streamlit as st
 from fpdf import FPDF
+import numpy as np
 
-# --- Page config
-st.set_page_config(page_title="Live Banking Market Dashboard", layout="wide", initial_sidebar_state="expanded")
+# --- PAGE CONFIGURATION ---
+st.set_page_config(
+    page_title="Banking Market Intelligence Dashboard",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-api_key = st.secrets["newsapi"]["api_key"]
-
-# --- Constants
+# --- CONSTANTS ---
 TICKERS = {
     "Goldman Sachs": "GS",
     "Morgan Stanley": "MS",
@@ -23,22 +26,20 @@ TICKERS = {
     "Barclays (LSE)": "BARC.L"
 }
 
-# --- Helpers
-@st.cache_data(ttl=300)
+NEWS_API_KEY = st.secrets.get("NEWSAPI_KEY")
+
+# --- CACHING FUNCTIONS ---
+@st.cache_data(ttl=600)
 def fetch_history(ticker, period="1y", interval="1d"):
     tk = yf.Ticker(ticker)
     df = tk.history(period=period, interval=interval)
-    df = df.reset_index()
-    return df
+    return df.reset_index()
 
 @st.cache_data(ttl=600)
 def fetch_info(ticker):
-    tk = yf.Ticker(ticker)
-    try:
-        return tk.info
-    except Exception:
-        return {}
+    return yf.Ticker(ticker).info
 
+# --- TECHNICAL INDICATORS ---
 def sma(series, window):
     return series.rolling(window).mean()
 
@@ -49,169 +50,121 @@ def compute_rsi(series, period=14):
     ma_up = up.rolling(period).mean()
     ma_down = down.rolling(period).mean()
     rs = ma_up / ma_down
-    rsi = 100 - (100 / (1 + rs))
-    return rsi
+    return 100 - (100 / (1 + rs))
 
-def momentum_score(df):
-    try:
-        last = df['Close'].iloc[-1]
-        ret_1m = df['Close'].pct_change(21).iloc[-1] * 100
-        ret_3m = df['Close'].pct_change(63).iloc[-1] * 100
-        sma50 = df['Close'].rolling(50).mean().iloc[-1]
-        pos_sma = (last / sma50 - 1) * 100
-        score = 0.5 * ret_1m + 0.35 * ret_3m + 0.15 * pos_sma
-        score = int(max(0, min(100, 50 + score)))
-        return score
-    except Exception:
-        return None
+def beta_volatility(df, benchmark_df):
+    returns_stock = df['Close'].pct_change().dropna()
+    returns_bench = benchmark_df['Close'].pct_change().dropna()
+    beta = np.cov(returns_stock, returns_bench)[0][1] / np.var(returns_bench)
+    volatility = returns_stock.std() * np.sqrt(252)
+    return beta, volatility
 
-def get_news(query, api_key):
-    if not api_key:
+def sharpe_ratio(df, risk_free_rate=0.02):
+    returns = df['Close'].pct_change().dropna()
+    excess_return = returns - (risk_free_rate / 252)
+    return np.sqrt(252) * (excess_return.mean() / excess_return.std())
+
+# --- NEWS FETCH ---
+def get_news(query):
+    if not NEWS_API_KEY:
         return []
-    url = f"https://newsapi.org/v2/everything?q={query}&language=en&sortBy=publishedAt&pageSize=5&apiKey={api_key}"
-    try:
-        res = requests.get(url, timeout=6).json()
-        return res.get("articles", [])
-    except Exception:
-        return []
+    url = f"https://newsapi.org/v2/everything?q={query}&language=en&sortBy=publishedAt&pageSize=5&apiKey={NEWS_API_KEY}"
+    res = requests.get(url, timeout=6).json()
+    return res.get("articles", [])
 
-# --- Sidebar (controls)
-st.sidebar.title("Controls")
-mode = st.sidebar.radio("Mode", ["Single Bank", "Cross Comparison"])
-if mode == "Single Bank":
-    bank = st.sidebar.selectbox("Select a bank", list(TICKERS.keys()))
-    selected_tickers = [TICKERS[bank]]
-else:
-    banks = st.sidebar.multiselect("Select banks (2 to 4)", list(TICKERS.keys()),
-                                   default=["Goldman Sachs", "Morgan Stanley"])
-    selected_tickers = [TICKERS[b] for b in banks]
-
+# --- SIDEBAR ---
+st.sidebar.title("⚙️ Controls")
+mode = st.sidebar.radio("Mode", ["Single Bank", "Comparison"])
 period = st.sidebar.selectbox("Period", ["1mo", "3mo", "6mo", "1y", "5y"], index=3)
 interval = st.sidebar.selectbox("Interval", ["1d", "1wk"], index=0)
-show_tech = st.sidebar.checkbox("Show technical indicators (SMA / RSI)", value=True)
-show_news = st.sidebar.checkbox("Show news (NewsAPI)", value=True)
+show_tech = st.sidebar.checkbox("Technical Indicators", value=True)
+show_news = st.sidebar.checkbox("Bank News", value=True)
 
-# NEWS API key from secrets (Streamlit secrets or local .streamlit/secrets.toml)
-NEWS_API_KEY = st.secrets.get("NEWSAPI_KEY") if "NEWSAPI_KEY" in st.secrets else None
+# --- MAIN ---
+st.markdown("<h1 style='color:#004aad;'>📊 Banking Market Intelligence Dashboard</h1>", unsafe_allow_html=True)
 
-# --- Main layout
-st.markdown(
-    """
-    <style>
-    /* Minimal Apple / Banking look */
-    .stApp { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial; }
-    .card { background: #ffffff; border-radius: 14px; box-shadow: 0 6px 18px rgba(15, 15, 15, 0.06); padding: 18px; }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+if mode == "Single Bank":
+    bank = st.sidebar.selectbox("Select Bank", list(TICKERS.keys()))
+    ticker = TICKERS[bank]
 
-st.title("📈 Live Banking Market Dashboard")
-st.write("Interactive market dashboard for major banks. Data source: Yahoo Finance & NewsAPI (news).")
+    df = fetch_history(ticker, period, interval)
+    info = fetch_info(ticker)
 
-# --- Fetch data for selected tickers
-dataframes = {}
-infos = {}
-for tick in selected_tickers:
-    df = fetch_history(tick, period=period, interval=interval)
     if df.empty:
-        st.warning(f"No data for {tick}.")
+        st.error("No data available.")
     else:
-        dataframes[tick] = df
-        infos[tick] = fetch_info(tick)
-
-# --- Mode: Cross Comparison
-if mode == "Cross Comparison":
-    st.header("Cross comparison")
-    if len(dataframes) < 1:
-        st.info("Select at least one bank.")
-    else:
-        fig = go.Figure()
-        for t, df in dataframes.items():
-            fig.add_trace(go.Scatter(x=df['Date'], y=df['Close'], mode='lines', name=t))
-        fig.update_layout(title="Price comparison", xaxis_title="Date", yaxis_title="Price (USD)")
+        # PRICE CHART WITH CANDLESTICKS
+        fig = go.Figure(data=[go.Candlestick(
+            x=df['Date'], open=df['Open'], high=df['High'],
+            low=df['Low'], close=df['Close'], name='Price'
+        )])
+        fig.update_layout(title=f"{bank} Price Evolution", xaxis_rangeslider_visible=False)
         st.plotly_chart(fig, use_container_width=True)
 
-        # Comparative table
-        rows = []
-        for t in selected_tickers:
-            info = infos.get(t, {})
-            rows.append({
-                "Ticker": t,
-                "Current Price": info.get("currentPrice", None),
-                "Market Cap": info.get("marketCap", None),
-                "Trailing P/E": info.get("trailingPE", None)
-            })
-        if rows:
-            st.subheader("Quick metrics")
-            st.table(pd.DataFrame(rows).set_index("Ticker"))
-
-# --- Mode: Single Bank
-else:
-    st.header(bank)
-    tick = selected_tickers[0]
-    df = dataframes.get(tick)
-    info = infos.get(tick, {})
-
-    if df is None or df.empty:
-        st.info("No data available. Try another ticker or period.")
-    else:
-        # Price chart
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(x=df['Date'], y=df['Close'], mode='lines', name='Close'))
-        fig.update_layout(title=f"{tick} - Price", xaxis_title="Date", yaxis_title="Price (USD)")
-        st.plotly_chart(fig, use_container_width=True)
-
-        # Key metrics in a clean row
+        # METRICS ROW
         c1, c2, c3, c4 = st.columns(4)
-        c1.metric("Last Price", f"{df['Close'].iloc[-1]:.2f}")
-        mc = info.get("marketCap", "N/A")
-        c2.metric("Market Cap", f"{mc:,}" if mc != "N/A" else "N/A")
-        c3.metric("Trailing P/E", info.get("trailingPE", "N/A"))
-        c4.metric("Dividend Yield", info.get("dividendYield", "N/A"))
+        c1.metric("Last Price", f"{df['Close'].iloc[-1]:.2f} USD")
+        c2.metric("Market Cap", f"{info.get('marketCap', 'N/A'):,}")
+        c3.metric("P/E", info.get("trailingPE", "N/A"))
+        c4.metric("Dividend Yield", f"{info.get('dividendYield', 0)*100:.2f}%")
 
-        # Technical indicators
+        # TECHNICAL INDICATORS
         if show_tech:
             df['SMA50'] = sma(df['Close'], 50)
             df['RSI'] = compute_rsi(df['Close'])
-            fig2 = go.Figure()
-            fig2.add_trace(go.Scatter(x=df['Date'], y=df['Close'], name='Close'))
-            fig2.add_trace(go.Scatter(x=df['Date'], y=df['SMA50'], name='SMA50'))
-            fig2.update_layout(title="Price & SMA50", xaxis_title="Date", yaxis_title="Price")
+            fig2 = px.line(df, x='Date', y=['Close', 'SMA50'], title="Price & SMA50")
             st.plotly_chart(fig2, use_container_width=True)
-
-            st.subheader("RSI (last 100 points)")
             st.line_chart(df.set_index('Date')['RSI'].tail(100))
 
-        # Momentum score
-        score = momentum_score(df)
-        if score is not None:
-            st.metric("Momentum score (0-100)", score)
+        # RISK METRICS
+        benchmark_df = fetch_history("^GSPC", period, interval)
+        beta, vol = beta_volatility(df, benchmark_df)
+        st.metric("Beta vs S&P500", f"{beta:.2f}")
+        st.metric("Annual Volatility", f"{vol*100:.2f}%")
+        st.metric("Sharpe Ratio", f"{sharpe_ratio(df):.2f}")
 
-        # Downloads
-        csv = df.to_csv(index=False).encode('utf-8')
-        st.download_button("Download CSV", data=csv, file_name=f"{tick}_history.csv", mime="text/csv")
-
-        if st.button("Generate short PDF summary"):
+        # PDF EXPORT
+        if st.button("Generate PDF Report"):
             pdf = FPDF()
             pdf.add_page()
+            pdf.set_font("Arial", size=16)
+            pdf.cell(0, 10, f"{bank} - Financial Report", ln=True)
             pdf.set_font("Arial", size=12)
-            pdf.cell(0, 10, f"{tick} - Short summary", ln=True)
-            pdf.cell(0, 10, f"Last price: {df['Close'].iloc[-1]:.2f}", ln=True)
-            pdf.cell(0, 10, f"Momentum score: {score}", ln=True)
+            pdf.cell(0, 10, f"Last Price: {df['Close'].iloc[-1]:.2f} USD", ln=True)
+            pdf.cell(0, 10, f"Market Cap: {info.get('marketCap', 'N/A'):,}", ln=True)
+            pdf.cell(0, 10, f"Beta: {beta:.2f} | Sharpe: {sharpe_ratio(df):.2f}", ln=True)
             buf = BytesIO()
             pdf.output(buf)
             buf.seek(0)
-            st.download_button("Download PDF", data=buf, file_name=f"{tick}_summary.pdf", mime="application/pdf")
+            st.download_button("Download PDF", buf, f"{ticker}_report.pdf")
 
-        # News
+        # NEWS
         if show_news:
-            st.subheader("Latest news")
-            articles = get_news(bank if bank else tick, NEWS_API_KEY)
-            if not articles:
-                st.info("No news available or NewsAPI key not configured.")
-            else:
-                for art in articles:
-                    st.markdown(f"**[{art.get('title')}]({art.get('url')})** — *{art.get('source',{}).get('name')}*")
-                    st.write(art.get("description"))
-                    st.write("---")
+            st.subheader("📰 Latest News")
+            for art in get_news(bank):
+                st.markdown(f"**[{art.get('title')}]({art.get('url')})** — *{art.get('source', {}).get('name', '')}*")
+                st.write(art.get("description", ""))
+                st.write("---")
+
+else:
+    banks = st.sidebar.multiselect("Select Banks", list(TICKERS.keys()), default=["Goldman Sachs", "Morgan Stanley"])
+    data = {}
+    for b in banks:
+        data[b] = fetch_history(TICKERS[b], period, interval)
+
+    fig = go.Figure()
+    for bank, df in data.items():
+        fig.add_trace(go.Scatter(x=df['Date'], y=df['Close'], mode='lines', name=bank))
+    fig.update_layout(title="Comparative Price Evolution")
+    st.plotly_chart(fig, use_container_width=True)
+
+    metrics = []
+    for b in banks:
+        info = fetch_info(TICKERS[b])
+        metrics.append({
+            "Bank": b,
+            "Price": info.get("currentPrice", None),
+            "Market Cap": info.get("marketCap", None),
+            "P/E": info.get("trailingPE", None)
+        })
+    st.dataframe(pd.DataFrame(metrics))
