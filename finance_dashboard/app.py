@@ -474,7 +474,7 @@ if tab == "Dashboard":
                         pdf.set_auto_page_break(auto=True, margin=36)
 
                         pdf.add_page()
-                        pdf.set_font("DejaVu", size=20, style="B")
+                        pdf.set_font("DejaVu", size=20)
                         pdf.cell(0, 40, f"{bank} - Financial Report", ln=True, align="C")
                         pdf.set_font("DejaVu", size=12)
                         pdf.ln(10)
