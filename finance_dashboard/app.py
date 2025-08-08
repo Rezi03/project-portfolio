@@ -11,6 +11,8 @@ from fpdf import FPDF
 import tempfile
 import os
 from datetime import datetime
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(
@@ -40,7 +42,6 @@ def fetch_history(ticker, period="1y", interval="1d"):
         if df.empty:
             return pd.DataFrame()
         df = df.reset_index()
-        df.rename(columns={'Date': 'Date'}, inplace=True)
         return df
     except Exception:
         return pd.DataFrame()
@@ -67,6 +68,8 @@ def compute_rsi(series, period=14):
 
 def annualized_return(df):
     returns = df['Close'].pct_change().dropna()
+    if returns.empty:
+        return np.nan
     avg_daily = returns.mean()
     return (1 + avg_daily) ** 252 - 1
 
@@ -89,18 +92,21 @@ def max_drawdown(df):
 
 def rolling_volatility(df, window=21):
     returns = df['Close'].pct_change().dropna()
+    if returns.empty:
+        return pd.Series(dtype=float)
     return returns.rolling(window).std() * np.sqrt(252)
 
 def sharpe_ratio(df, risk_free_rate=0.02):
     returns = df['Close'].pct_change().dropna()
+    if returns.empty or returns.std() == 0:
+        return np.nan
     excess_return = returns - (risk_free_rate / 252)
-    return np.sqrt(252) * (excess_return.mean() / (excess_return.std() if excess_return.std() != 0 else np.nan))
+    return np.sqrt(252) * (excess_return.mean() / excess_return.std())
 
 def beta_volatility(df, benchmark_df):
     try:
         returns_stock = df['Close'].pct_change().dropna()
         returns_bench = benchmark_df['Close'].pct_change().dropna()
-        # align
         df_join = pd.concat([returns_stock, returns_bench], axis=1).dropna()
         if df_join.shape[0] < 2:
             return np.nan, np.nan
@@ -129,6 +135,130 @@ def get_news(query):
         return res.get("articles", [])
     except Exception:
         return []
+
+# --- Matplotlib fallback helpers (Option 1) ---
+def create_placeholder_png(message="Chart not available"):
+    buf = BytesIO()
+    plt.figure(figsize=(8, 3))
+    plt.text(0.5, 0.5, message, ha='center', va='center', fontsize=12)
+    plt.axis('off')
+    plt.tight_layout()
+    plt.savefig(buf, format='png', bbox_inches='tight')
+    plt.close()
+    buf.seek(0)
+    return buf.getvalue()
+
+def render_chart_bytes(name, fig_obj=None, df=None, bank_name="Bank"):
+    """
+    Try to render Plotly figure via kaleido (if available).
+    If that fails, draw an equivalent static chart with Matplotlib using data from df.
+    Returns raw PNG bytes.
+    """
+    # 1) Try Plotly -> PNG via kaleido (works locally if kaleido+chrome available)
+    if fig_obj is not None:
+        try:
+            # attempt to import kaleido to prefer it when available
+            import kaleido  # noqa: F401
+            try:
+                img_bytes = fig_obj.to_image(format="png")
+                if img_bytes:
+                    return img_bytes
+            except Exception:
+                # fallback to matplotlib
+                pass
+        except Exception:
+            # kaleido not installed -> fallback
+            pass
+
+    # 2) Fallback: build PNG with Matplotlib from df
+    if df is None or df.empty:
+        return create_placeholder_png(f"{name} - no data")
+
+    try:
+        buf = BytesIO()
+        # prepare x axis values
+        x = df['Date']
+        # PRICE or SMA: line chart with SMAs if present
+        if name == "price":
+            plt.figure(figsize=(10,4))
+            plt.plot(x, df['Close'], label='Close', linewidth=1.4)
+            if 'SMA50' not in df.columns:
+                df['SMA50'] = sma(df['Close'], 50)
+            if 'SMA200' not in df.columns:
+                df['SMA200'] = sma(df['Close'], 200)
+            if df['SMA50'].notna().any():
+                plt.plot(x, df['SMA50'], label='SMA50', linestyle='--', linewidth=1)
+            if df['SMA200'].notna().any():
+                plt.plot(x, df['SMA200'], label='SMA200', linestyle=':', linewidth=1)
+            plt.title(f"{bank_name} - Price")
+            plt.legend()
+            plt.grid(True)
+            plt.tight_layout()
+            plt.savefig(buf, format='png', bbox_inches='tight')
+            plt.close()
+            buf.seek(0)
+            return buf.getvalue()
+
+        if name == "sma":
+            plt.figure(figsize=(10,4))
+            if 'SMA50' not in df.columns:
+                df['SMA50'] = sma(df['Close'], 50)
+            plt.plot(x, df['Close'], label='Close')
+            plt.plot(x, df['SMA50'], label='SMA50', linestyle='--')
+            plt.title(f"{bank_name} - SMA")
+            plt.legend()
+            plt.grid(True)
+            plt.tight_layout()
+            plt.savefig(buf, format='png', bbox_inches='tight')
+            plt.close()
+            buf.seek(0)
+            return buf.getvalue()
+
+        if name == "rsi":
+            if 'RSI' not in df.columns:
+                df['RSI'] = compute_rsi(df['Close'])
+            plt.figure(figsize=(10,3))
+            plt.plot(x, df['RSI'], label='RSI (14)')
+            plt.axhline(70, color='red', linestyle='--', linewidth=0.7)
+            plt.axhline(30, color='green', linestyle='--', linewidth=0.7)
+            plt.title(f"{bank_name} - RSI (14)")
+            plt.ylim(0, 100)
+            plt.grid(True)
+            plt.tight_layout()
+            plt.savefig(buf, format='png', bbox_inches='tight')
+            plt.close()
+            buf.seek(0)
+            return buf.getvalue()
+
+        if name == "vol":
+            if 'RollingVol21' not in df.columns:
+                df['RollingVol21'] = rolling_volatility(df, window=21)
+            plt.figure(figsize=(10,3))
+            plt.plot(x, df['RollingVol21'], label='21-day rolling vol')
+            plt.title(f"{bank_name} - 21-day Rolling Volatility")
+            plt.grid(True)
+            plt.tight_layout()
+            plt.savefig(buf, format='png', bbox_inches='tight')
+            plt.close()
+            buf.seek(0)
+            return buf.getvalue()
+
+        if name == "hist":
+            returns = df['Close'].pct_change().dropna()
+            plt.figure(figsize=(8,3))
+            plt.hist(returns, bins=50)
+            plt.title(f"{bank_name} - Daily Returns Distribution")
+            plt.grid(True)
+            plt.tight_layout()
+            plt.savefig(buf, format='png', bbox_inches='tight')
+            plt.close()
+            buf.seek(0)
+            return buf.getvalue()
+
+        # default fallback image
+        return create_placeholder_png(f"{name} - chart type not handled")
+    except Exception as e:
+        return create_placeholder_png(f"Render error: {str(e)[:80]}")
 
 # --- UI: Sidebar ---
 st.sidebar.title("Controls")
@@ -208,30 +338,29 @@ if tab == "Dashboard":
             fig_roll = px.line(df, x='Date', y='RollingVol21', title="21-day Rolling Volatility (annualized)", template="plotly_white", height=220)
             st.plotly_chart(fig_roll, use_container_width=True)
 
-            # PDF EXPORT - more structured
+            # PDF EXPORT - more structured (Matplotlib fallback for charts)
             st.markdown("### Generate a structured PDF report")
             generate_col1, generate_col2 = st.columns([3,1])
             with generate_col1:
                 st.info("The report includes: cover, key metrics, tables and embedded charts.")
             with generate_col2:
                 if st.button("Generate PDF Report", key=f"gen_pdf_{ticker}", help="Create and download a structured PDF report"):
-                    # Build figures to embed
+                    # Build list of chart names and plotly objects (if any)
                     figs_to_save = [
                         ("price", fig_price),
-                        ("sma", fig_sma if 'fig_sma' in locals() else fig_price),
-                        ("rsi", fig_rsi if 'fig_rsi' in locals() else fig_hist),
+                        ("sma", fig_sma if 'fig_sma' in locals() else None),
+                        ("rsi", fig_rsi if 'fig_rsi' in locals() else None),
                         ("vol", fig_roll),
                         ("hist", fig_hist)
                     ]
                     tmp_files = []
                     try:
                         for name, fig in figs_to_save:
-                            try:
-                                import kaleido
-                                img_bytes = fig.to_image(format="png")
-                            except ImportError:
-                                st.warning("Kaleido is not installed. Charts will not be embedded in the PDF.")
-                                img_bytes = None
+                            # Render PNG bytes either via kaleido or Matplotlib fallback
+                            img_bytes = render_chart_bytes(name, fig_obj=fig, df=df, bank_name=bank)
+                            # ensure we have bytes
+                            if not img_bytes:
+                                img_bytes = create_placeholder_png(f"{name} - no image")
 
                             tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
                             tmp.write(img_bytes)
@@ -244,7 +373,7 @@ if tab == "Dashboard":
                         pdf.set_auto_page_break(auto=True, margin=36)
                         # Cover
                         pdf.add_page()
-                        pdf.set_font("Helvetica", style="B", size=20)
+                        pdf.set_font("Helvetica", size=20, style="B")
                         pdf.cell(0, 40, f"{bank} - Financial Report", ln=True, align="C")
                         pdf.set_font("Helvetica", size=12)
                         pdf.ln(10)
@@ -255,7 +384,7 @@ if tab == "Dashboard":
 
                         # Metrics page
                         pdf.add_page()
-                        pdf.set_font("Helvetica", style="B", size=14)
+                        pdf.set_font("Helvetica", size=14, style="B")
                         pdf.cell(0, 18, "Key Metrics", ln=True)
                         pdf.set_font("Helvetica", size=10)
                         pdf.ln(6)
@@ -273,12 +402,10 @@ if tab == "Dashboard":
                         # Insert charts pages
                         for path in tmp_files:
                             pdf.add_page()
-                            # Fit image width to page margins (A4 ~ 595pt wide), leave margins
                             page_width = pdf.w - 72
                             try:
                                 pdf.image(path, x=36, y=80, w=page_width)
                             except Exception:
-                                # If image fails, add small note
                                 pdf.set_font("Helvetica", size=10)
                                 pdf.cell(0, 12, f"Chart {os.path.basename(path)} could not be embedded.", ln=True)
 
@@ -332,7 +459,6 @@ if tab == "Dashboard":
             st.dataframe(pd.DataFrame(metrics))
 
             # Correlation heatmap if aligned
-            # build returns DataFrame
             returns_df = pd.DataFrame()
             for b in banks:
                 dfb = data[b].set_index('Date').sort_index()
