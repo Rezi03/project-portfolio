@@ -71,6 +71,8 @@ def get_news(query):
     url = f"https://newsapi.org/v2/everything?q={query}&language=en&sortBy=publishedAt&pageSize=5&apiKey={NEWS_API_KEY}"
     try:
         res = requests.get(url, timeout=6).json()
+        if res.get("status") != "ok":
+            return []
         return res.get("articles", [])
     except:
         return []
@@ -127,47 +129,38 @@ if tab == "Dashboard":
             benchmark_df = fetch_history("^GSPC", period, interval)
             if benchmark_df.empty or 'Close' not in benchmark_df.columns or benchmark_df['Close'].isnull().all():
                 st.warning("Benchmark data unavailable for risk metrics.")
+                beta, vol = None, None
             else:
                 beta, vol = beta_volatility(df, benchmark_df)
                 st.metric("Beta vs S&P500", f"{beta:.2f}")
                 st.metric("Annual Volatility", f"{vol*100:.2f}%")
                 st.metric("Sharpe Ratio", f"{sharpe_ratio(df):.2f}")
 
-            # PDF EXPORT
-            if st.button("Generate PDF Report"):
+            # PDF EXPORT - bouton avec clé unique
+            if st.button("Generate PDF Report", key="gen_pdf"):
                 pdf = FPDF()
                 pdf.add_page()
                 pdf.set_font("Arial", size=16)
                 pdf.cell(0, 10, f"{bank} - Financial Report", ln=True)
                 pdf.set_font("Arial", size=12)
                 pdf.cell(0, 10, f"Last Price: {df['Close'].iloc[-1]:.2f} USD", ln=True)
-                pdf.cell(0, 10, f"Market Cap: {info.get('marketCap', 'N/A'):,}" if info.get('marketCap') else "Market Cap: N/A", ln=True)
-                pdf.cell(0, 10, f"Beta: {beta:.2f}" if 'beta' in locals() else "Beta: N/A", ln=True)
+                market_cap_str = f"{info.get('marketCap', 'N/A'):,}" if info.get('marketCap') else "N/A"
+                pdf.cell(0, 10, f"Market Cap: {market_cap_str}", ln=True)
+                if beta is not None:
+                    pdf.cell(0, 10, f"Beta: {beta:.2f}", ln=True)
+                else:
+                    pdf.cell(0, 10, "Beta: N/A", ln=True)
                 pdf.cell(0, 10, f"Sharpe Ratio: {sharpe_ratio(df):.2f}", ln=True)
-                buf = BytesIO()
-                pdf.output(buf)
-                buf.seek(0)
-                st.download_button("Download PDF", buf, file_name=f"{ticker}_report.pdf")
-            if st.button("Generate PDF Report"):
-                pdf = FPDF()
-                pdf.add_page()
-                pdf.set_font("Arial", size=16)
-                pdf.cell(0, 10, f"{bank} - Financial Report", ln=True)
-                pdf.set_font("Arial", size=12)
-                pdf.cell(0, 10, f"Last Price: {df['Close'].iloc[-1]:.2f} USD", ln=True)
-                pdf.cell(0, 10, f"Market Cap: {info.get('marketCap', 'N/A'):,}", ln=True)
-                pdf.cell(0, 10, f"Beta: {beta:.2f} | Sharpe: {sharpe_ratio(df):.2f}", ln=True)
 
-    # Générer PDF en bytes
-                pdf_bytes = pdf.output(name='', dest='S').encode('latin1')
+                pdf_bytes = pdf.output(dest='S').encode('latin1')
 
-            st.download_button(
-                label="Download PDF",
-                data=pdf_bytes,
-                file_name=f"{ticker}_report.pdf",
-                mime="application/pdf"
+                st.download_button(
+                    label="Download PDF",
+                    data=pdf_bytes,
+                    file_name=f"{ticker}_report.pdf",
+                    mime="application/pdf",
+                    key="download_pdf"
                 )
-
 
     else:  # Comparison mode
         banks = st.sidebar.multiselect("Select Banks", list(TICKERS.keys()), default=["Goldman Sachs", "Morgan Stanley"])
@@ -196,11 +189,16 @@ if tab == "Dashboard":
 elif tab == "News":
     st.markdown("<h1 style='color:#004aad;'>📰 Latest Banking News</h1>", unsafe_allow_html=True)
     bank_for_news = st.selectbox("Select Bank for News", list(TICKERS.keys()))
-    articles = get_news(bank_for_news)
-    if not articles:
-        st.info("No news available or NEWSAPI_KEY missing/invalid.")
+
+    if not NEWS_API_KEY:
+        st.error("NEWSAPI_KEY missing or invalid. Please add a valid key to Streamlit secrets.")
+        articles = []
     else:
-        for art in articles:
-            st.markdown(f"**[{art.get('title')}]({art.get('url')})** — *{art.get('source', {}).get('name', '')}*")
-            st.write(art.get("description", ""))
-            st.write("---")
+        articles = get_news(bank_for_news)
+        if not articles:
+            st.info("No news available for this bank at the moment.")
+
+    for art in articles:
+        st.markdown(f"**[{art.get('title')}]({art.get('url')})** — *{art.get('source', {}).get('name', '')}*")
+        st.write(art.get("description", ""))
+        st.write("---")
