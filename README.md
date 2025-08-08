@@ -30,6 +30,18 @@ This thesis investigates user behavior and navigation patterns on the Éducapaci
 **Overview**  
 This group project involved developing an interactive Python application to explore a dataset of French monuments. The too allows users to query information such as monument location, type, historical classification, and annual visit counts.  
 
+---
+
+### Banking Market Intelligence Dashboard  
+**Type:** Interactive Data Visualization  
+**Platform:** Streamlit Application  
+**Period:** August 2025  
+
+📁 Available in the `finance_dashboard/` folder  
+🌐 [Live Dashboard](https://project-portfolio-uif5tvjqcbi55pbxlstumv.streamlit.app)  
+
+**Overview**  
+This project features an interactive dashboard designed to analyze and visualize financial market data relevant to banking institutions. It supports decision-making by providing real-time insights through intuitive charts and data exploration tools, built with Python and Streamlit.
 
 ---
 
