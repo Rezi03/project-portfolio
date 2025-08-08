@@ -470,7 +470,8 @@ if tab == "Dashboard":
 
                         # Build PDF
                         pdf = FPDF(unit="pt", format="A4")
-                        pdf.add_font("DejaVu", "", "fonts/DejaVuSans.ttf", uni=True)
+                        FONT_PATH = os.path.join(os.path.dirname(__file__), "fonts", "DejaVuSans.ttf")
+                        pdf.add_font("DejaVu", "", FONT_PATH, uni=True)
                         pdf.set_font("DejaVu", size=12)
 
                         pdf.set_auto_page_break(auto=True, margin=36)
