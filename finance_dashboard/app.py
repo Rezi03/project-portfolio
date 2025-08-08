@@ -227,10 +227,12 @@ if tab == "Dashboard":
                     try:
                         for name, fig in figs_to_save:
                             try:
-                                img_bytes = fig.to_image(format="png", engine="kaleido")
-                            except Exception:
-                                # fallback to write_image (older API)
-                                img_bytes = fig.write_image(format="png")
+                                import kaleido
+                                img_bytes = fig.to_image(format="png")
+                            except ImportError:
+                                st.warning("Kaleido is not installed. Charts will not be embedded in the PDF.")
+                                img_bytes = None
+
                             tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
                             tmp.write(img_bytes)
                             tmp.flush()
