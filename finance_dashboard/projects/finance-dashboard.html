@@ -6,39 +6,67 @@
   <title>Live Banking Market Dashboard</title>
   <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/2331/2331966.png">
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:#f7f7f8; color:#0b0b0b; margin:0; padding:40px; }
-    .container { max-width:1100px; margin:0 auto; }
-    .card { background:#ffffff; border-radius:14px; box-shadow: 0 8px 24px rgba(15,15,15,0.06); padding:28px; animation: fadeIn 0.6s ease-in-out; }
-    .buttons { margin-top:18px; display:flex; flex-wrap: wrap; gap:12px; }
-    .btn { background:#0b5fff; color:white; padding:10px 16px; text-decoration:none; border-radius:10px; font-weight:600; transition: all 0.3s ease; }
-    .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.15); }
-    .btn-dark { background:#111111; }
-    .muted { color:#6b6b6b; margin-top:8px; }
-    .preview { margin-top:20px; border-radius:10px; overflow:hidden; }
-    iframe { width:100%; border:0; height:800px; display:block; }
-    @keyframes fadeIn { from {opacity:0; transform:translateY(10px);} to {opacity:1; transform:translateY(0);} }
+    :root{
+      --bg: #f5f6f7;
+      --card: #ffffff;
+      --primary: #0b5fff;
+      --muted:#6b6b6b;
+      --text:#0b0b0b;
+      --radius:14px;
+      --maxw:1100px;
+    }
+    html,body{height:100%;}
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background:var(--bg); color:var(--text); margin:0; padding:48px;
+      -webkit-font-smoothing:antialiased;
+    }
+    .container { max-width:var(--maxw); margin:0 auto; }
+    .card { background:var(--card); border-radius:var(--radius); box-shadow: 0 10px 30px rgba(15,15,15,0.06); padding:32px; }
+    h1 { margin:0; font-weight:700; font-size:28px; letter-spacing:-0.3px; }
+    p.lead { margin-top:8px; color:var(--muted); line-height:1.5; }
+    .controls { margin-top:22px; display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+    .btn {
+      background:var(--primary); color:white; padding:12px 18px; text-decoration:none; border-radius:12px;
+      display:inline-block; font-weight:600; box-shadow: 0 8px 20px rgba(11,95,255,0.12); transition: transform 0.18s ease;
+    }
+    .btn:hover{ transform:translateY(-3px); }
+    .btn.secondary { background:#111111; box-shadow:none; }
+    .preview { margin-top:22px; border-radius:12px; overflow:hidden; border:1px solid rgba(10,10,10,0.04); }
+    iframe { width:100%; border:0; height:820px; display:block; background:white; }
+    .notes { margin-top:20px; color:var(--muted); }
+    ul { margin-top:12px; padding-left:18px; }
+    a.link-muted { color:var(--muted); text-decoration:none; font-size:14px; }
+    @media(max-width:760px){
+      body{padding:20px;}
+      iframe{height:640px;}
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="card">
-      <h1>📊 Live Banking Market Dashboard</h1>
-      <p class="muted">Analyse interactive des principales banques (Goldman Sachs, Morgan Stanley, J.P. Morgan, Citi, Bank of America, Barclays). Données boursières en direct, indicateurs techniques, et flux d'actualités.</p>
-      <div class="buttons">
-        <a class="btn" href="YOUR_STREAMLIT_URL" target="_blank" rel="noopener">🚀 Open Live Demo</a>
-        <a class="btn btn-dark" href="https://github.com/REZI03/finance-dashboard" target="_blank" rel="noopener">💻 View on GitHub</a>
+      <h1>Live Banking Market Dashboard</h1>
+      <p class="lead">Interactive analytics for major banks (Goldman Sachs, Morgan Stanley, J.P. Morgan, Citi, Bank of America, Barclays). Real-time market data, risk metrics, visual analytics and structured report export (PDF).</p>
+
+      <div class="controls">
+        <a class="btn" href="YOUR_STREAMLIT_URL" target="_blank" rel="noopener">Open Live Demo</a>
+        <a class="btn secondary" href="https://github.com/REZI03/finance-dashboard" target="_blank" rel="noopener">View on GitHub</a>
+        <a class="link-muted" href="#notes">Quick notes & data sources</a>
       </div>
 
-      <div class="preview">
+      <div class="preview" style="margin-top:20px;">
         <iframe src="YOUR_STREAMLIT_URL" title="Live Banking Dashboard"></iframe>
       </div>
 
-      <h3 style="margin-top:22px;">Quick notes</h3>
-      <ul>
-        <li>📈 Data source: Yahoo Finance (yfinance)</li>
-        <li>📰 News: NewsAPI (clé dans secrets.toml)</li>
-        <li>⚙️ Built with Streamlit, Plotly, Pandas</li>
-      </ul>
+      <div id="notes" class="notes">
+        <h3 style="margin-bottom:6px;">Quick notes</h3>
+        <ul>
+          <li>Data source: Yahoo Finance via <code>yfinance</code>.</li>
+          <li>News feed (optional): NewsAPI (set your key in Streamlit secrets).</li>
+          <li>Built with Streamlit, Plotly and Python. PDF export uses FPDF and embedded charts.</li>
+        </ul>
+      </div>
     </div>
   </div>
 </body>
