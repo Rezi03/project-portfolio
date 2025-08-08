@@ -148,6 +148,26 @@ if tab == "Dashboard":
                 pdf.output(buf)
                 buf.seek(0)
                 st.download_button("Download PDF", buf, file_name=f"{ticker}_report.pdf")
+            if st.button("Generate PDF Report"):
+                pdf = FPDF()
+                pdf.add_page()
+                pdf.set_font("Arial", size=16)
+                pdf.cell(0, 10, f"{bank} - Financial Report", ln=True)
+                pdf.set_font("Arial", size=12)
+                pdf.cell(0, 10, f"Last Price: {df['Close'].iloc[-1]:.2f} USD", ln=True)
+                pdf.cell(0, 10, f"Market Cap: {info.get('marketCap', 'N/A'):,}", ln=True)
+                pdf.cell(0, 10, f"Beta: {beta:.2f} | Sharpe: {sharpe_ratio(df):.2f}", ln=True)
+
+    # Générer PDF en bytes
+                pdf_bytes = pdf.output(name='', dest='S').encode('latin1')
+
+            st.download_button(
+                label="Download PDF",
+                data=pdf_bytes,
+                file_name=f"{ticker}_report.pdf",
+                mime="application/pdf"
+                )
+
 
     else:  # Comparison mode
         banks = st.sidebar.multiselect("Select Banks", list(TICKERS.keys()), default=["Goldman Sachs", "Morgan Stanley"])
