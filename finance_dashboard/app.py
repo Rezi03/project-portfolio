@@ -470,12 +470,15 @@ if tab == "Dashboard":
 
                         # Build PDF
                         pdf = FPDF(unit="pt", format="A4")
+                        pdf.add_font("DejaVu", "", "fonts/DejaVuSans.ttf", uni=True)
+                        pdf.set_font("DejaVu", size=12)
+
                         pdf.set_auto_page_break(auto=True, margin=36)
                         # Cover
                         pdf.add_page()
                         pdf.set_font("Helvetica", size=20, style="B")
                         pdf.cell(0, 40, f"{bank} - Financial Report", ln=True, align="C")
-                        pdf.set_font("Helvetica", size=12)
+                        pdf.set_font("DejaVu", size=12)
                         pdf.ln(10)
                         pdf.multi_cell(0, 14, f"Report generated: {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}", align="C")
                         pdf.ln(8)
@@ -486,7 +489,7 @@ if tab == "Dashboard":
                         pdf.add_page()
                         pdf.set_font("Helvetica", size=14, style="B")
                         pdf.cell(0, 18, "Key Metrics", ln=True)
-                        pdf.set_font("Helvetica", size=10)
+                        pdf.set_font("DejaVu", size=10)
                         pdf.ln(6)
                         market_cap_str = f"{market_cap:,}" if market_cap else "N/A"
                         pdf.cell(0, 12, f"Last Price: {last_price:.2f} USD", ln=True)
@@ -503,9 +506,9 @@ if tab == "Dashboard":
                         pdf.ln(10)
 
                         # Summary text
-                        pdf.set_font("Helvetica", size=12)
+                        pdf.set_font("DejaVu", size=12)
                         pdf.multi_cell(0, 14, "Automated summary:")
-                        pdf.set_font("Helvetica", size=10)
+                        pdf.set_font("DejaVu", size=10)
                         pdf.multi_cell(0, 12, auto_text)
 
                         # Charts pages
@@ -515,10 +518,10 @@ if tab == "Dashboard":
                             try:
                                 pdf.image(path, x=36, y=80, w=page_width)
                             except Exception:
-                                pdf.set_font("Helvetica", size=10)
+                                pdf.set_font("DejaVu", size=10)
                                 pdf.cell(0, 12, f"Chart {os.path.basename(path)} could not be embedded.", ln=True)
 
-                        pdf_bytes = pdf.output(dest="S").encode("latin1")
+                        pdf_bytes = pdf.output(dest="S").encode("utf-8", "ignore")
                         st.download_button(
                             label="Download PDF",
                             data=pdf_bytes,
