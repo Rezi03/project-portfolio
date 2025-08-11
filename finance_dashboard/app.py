@@ -13,6 +13,9 @@ import os
 from datetime import datetime
 import matplotlib.pyplot as plt
 
+st.cache_data.clear()
+
+
 # --- PAGE CONFIG ---
 st.set_page_config(
     page_title="Banking Market Intelligence Dashboard",
@@ -34,7 +37,7 @@ BENCHMARK = "^GSPC"  # S&P 500 as benchmark
 NEWS_API_KEY = st.secrets.get("NEWSAPI_KEY") if "NEWSAPI_KEY" in st.secrets else None
 
 # --- CACHE HELPERS ---
-@st.cache_data(ttl=600, show_spinner=False)
+@st.cache_data(ttl=0, show_spinner=False)
 def fetch_history(ticker, period="1y", interval="1d"):
     try:
         tk = yf.Ticker(ticker)
