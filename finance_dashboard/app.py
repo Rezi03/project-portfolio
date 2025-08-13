@@ -12,11 +12,6 @@ import os
 from datetime import datetime
 import matplotlib.pyplot as plt
 
-index_path = os.path.join(os.path.dirname(__file__), "static", "index.html")
-
-with open(index_path) as f:
-    st.markdown(f.read(), unsafe_allow_html=True)
-
 st.cache_data.clear()
 
 # --- PAGE CONFIG ---
