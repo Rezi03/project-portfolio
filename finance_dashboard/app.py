@@ -12,6 +12,8 @@ import tempfile
 import os
 from datetime import datetime
 import matplotlib.pyplot as plt
+import streamlit.components.v1 as components
+
 
 GA_JS = """
 <!-- Google tag (gtag.js) -->
