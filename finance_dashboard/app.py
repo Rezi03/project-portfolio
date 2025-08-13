@@ -13,21 +13,19 @@ import os
 from datetime import datetime
 import matplotlib.pyplot as plt
 
-# --- Google Analytics ---
-st.markdown(
-    """
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-VLN2SS4TBC"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-VLN2SS4TBC');
-    </script>
-    """,
-    unsafe_allow_html=True
-)
-# --- Fin Google Analytics ---
+GA_JS = """
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-VLN2SS4TBC"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-VLN2SS4TBC');
+</script>
+"""
+
+# Injecte le script GA dans le head via un composant HTML
+components.html(f"<head>{GA_JS}</head>", height=0)
 
 
 st.cache_data.clear()
