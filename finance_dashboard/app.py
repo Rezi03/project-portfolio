@@ -1,4 +1,5 @@
 import streamlit as st
+import os
 from utils.ga import inject_ga4
 
 # GA4 Tracking
@@ -71,34 +72,37 @@ st.sidebar.markdown("""
 st.markdown("## Finance Projects")
 st.write("A selection of advanced finance tools designed for investment banking workflows, with intuitive interfaces and real-time insights.")
 
+# Media folder
+media_folder = "media"
+
 # List of projects
 projects = [
     {
         "id": "banking-market-intelligence-dashboard",
         "title": "Banking Market Intelligence Dashboard",
         "desc": "An integrated platform providing live macroeconomic data, sector analysis, and market intelligence, tailored for investment banking professionals. Features real-time charts, comparative analytics, and curated insights for strategic decision-making.",
-        "media": "media/banking_demo.mp4",
+        "media": "banking_demo.mp4",
         "page": "pages/0_Legacy_Analytics.py"
     },
     {
         "id": "ma-deals-dashboard",
         "title": "M&A Deals Dashboard",
         "desc": "Tracks global mergers and acquisitions with live updates, filtering by sector, region, and deal size. Offers dynamic visualizations, deal timelines, and integrated financial metrics to support pitchbook preparation and client advisory.",
-        "media": "media/ma_demo.mp4",
+        "media": "ma_demo.mp4",
         "page": "pages/1_M&A_Deals_Dashboard.py"
     },
     {
         "id": "dcf-lab",
         "title": "DCF Lab",
         "desc": "An interactive discounted cash flow modeling environment where assumptions such as WACC, growth rates, and exit multiples can be adjusted on the fly. Outputs instant valuations with sensitivity analysis for deal pricing and fairness opinions.",
-        "media": "media/dcf_demo.mp4",
+        "media": "dcf_demo.mp4",
         "page": "pages/2_DCF_Lab.py"
     },
     {
         "id": "equitybond-backtester",
         "title": "Equity/Bond Backtester",
         "desc": "Portfolio simulation tool allowing backtesting of equities and fixed income assets. Provides key performance indicators including CAGR, Sharpe ratio, drawdowns, and volatility metrics, with customizable date ranges and allocation weights.",
-        "media": "media/backtester_demo.mp4",
+        "media": "backtester_demo.mp4",
         "page": "pages/3_Backtester_Equity_Bonds.py"
     }
 ]
@@ -106,11 +110,17 @@ projects = [
 # Render projects
 for p in projects:
     st.markdown(f'<div class="project-section" id="{p["id"]}">', unsafe_allow_html=True)
-    # Video placeholder (can be image if needed)
-    if p["media"].endswith(".mp4"):
-        st.video(p["media"])
+
+    # Build full media path
+    media_path = os.path.join(media_folder, p.get("media", ""))
+    if media_path and os.path.exists(media_path):
+        if media_path.endswith(".mp4"):
+            st.video(media_path)
+        else:
+            st.image(media_path)
     else:
-        st.image(p["media"])
+        st.write(f"Media file not found: {media_path}")
+
     st.markdown(f'<div class="project-title">{p["title"]}</div>', unsafe_allow_html=True)
     st.markdown(f'<div class="project-desc">{p["desc"]}</div>', unsafe_allow_html=True)
     st.markdown(f'<a href="{p["page"]}" class="btn">Open Project</a>', unsafe_allow_html=True)
