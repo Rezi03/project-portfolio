@@ -6,6 +6,3 @@ requests
 fpdf
 numpy
 matplotlib
-python-dateutil
-toml
-scipy
