@@ -1,7 +1,4 @@
 import streamlit as st
-from utils.ga import inject_ga4
-from utils.news import fetch_news
-import streamlit as st
 import yfinance as yf
 import pandas as pd
 import numpy as np
@@ -15,15 +12,7 @@ import os
 from datetime import datetime
 import matplotlib.pyplot as plt
 
-st.set_page_config(page_title="Legacy Analytics", layout="wide")
-inject_ga4()
-
-st.markdown("### Legacy Analytics")
-
-left, right = st.columns([2.2, 1])
-
-with left:
-    st.cache_data.clear()
+st.cache_data.clear()
 
 # --- PAGE CONFIG ---
 st.set_page_config(
@@ -836,26 +825,3 @@ elif tab == "News":
         st.markdown(f"**[{art.get('title')}]({art.get('url')})** — *{art.get('source', {}).get('name', '')}*")
         st.write(art.get("description", ""))
         st.write("---")
-
-with right:
-    st.markdown("---")
-    st.markdown("#### News")
-    q = st.text_input("Search topic", value="Global Banking")
-    n = st.number_input("Results", min_value=3, max_value=20, value=6, step=1)
-    arts = fetch_news(q, page_size=int(n)) if q else []
-    if not arts:
-        st.caption("No news available.")
-    else:
-        for a in arts:
-            title = a.get("title", "")
-            source = (a.get("source") or {}).get("name", "")
-            published = a.get("publishedAt", "")
-            desc = a.get("description", "") or ""
-            url = a.get("url", "")
-
-            st.write(f"**{title}**")
-            st.caption(f"{source} · {published}")
-            st.write(desc)
-            if url:
-                st.link_button("Open", url, use_container_width=True)
-            st.divider()
