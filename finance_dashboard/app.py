@@ -1,139 +1,82 @@
 import streamlit as st
 from utils.ga import inject_ga4
-from utils.news import fetch_news
+from utils.news import fetch_news_page
 
+# Page configuration
 st.set_page_config(
-    page_title="Finance Projects — IB Track",
+    page_title="Finance Projects — Investment Banking Track",
     layout="wide",
 )
 
-# GA4 tracking (silencieux)
+# Inject GA4 analytics
 inject_ga4()
 
-# ---------- Global style (CSS minimal, typographie et alignements) ----------
+# Global minimal style
 st.markdown(
     """
     <style>
-      :root {
-        --bg: #ffffff;
-        --fg: #0f172a;
-        --muted: #6b7280;
-        --border: #e5e7eb;
-        --card: #fafafa;
-      }
-      .app-container { max-width: 1200px; margin: 0 auto; }
-      .title { font-size: 28px; font-weight: 700; letter-spacing: 0.2px; margin: 8px 0 2px; color: var(--fg); }
-      .subtitle { font-size: 14px; color: var(--muted); margin: 0 0 24px; }
-      .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-      .card {
-        border: 1px solid var(--border);
-        background: var(--card);
-        border-radius: 16px;
-        padding: 18px;
-        transition: transform .12s ease, box-shadow .12s ease;
-      }
-      .card:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(0,0,0,0.06); }
-      .card-title { font-size: 18px; font-weight: 600; margin: 4px 0 4px; }
-      .card-desc { font-size: 13px; color: var(--muted); margin: 0 0 10px; min-height: 40px; }
-      .btn-row { display: flex; gap: 8px; align-items: center; }
-      .btn { border: 1px solid var(--border); padding: 8px 12px; border-radius: 10px; text-decoration: none; font-size: 13px; }
-      .btn-link { color: #111827; background: #fff; }
-      .section-title { font-size: 18px; font-weight: 600; margin: 24px 0 8px; }
-      .news-card { border: 1px solid var(--border); padding: 12px 14px; border-radius: 12px; background: #fff; }
-      .news-title { font-weight: 600; font-size: 14px; margin: 2px 0; }
-      .news-meta { color: var(--muted); font-size: 12px; margin-bottom: 6px; }
-      .news-desc { font-size: 13px; color: #374151; }
-      .divider { height: 1px; background: var(--border); margin: 28px 0 10px; }
+        body { background-color: #f8fafc; }
+        .app-container { max-width: 1100px; margin: auto; padding: 20px; }
+        .page-title { font-size: 28px; font-weight: bold; }
+        .page-subtitle { font-size: 14px; color: #6b7280; margin-bottom: 20px; }
+        .card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; background: white; margin-bottom: 16px; }
+        .card-title { font-size: 18px; font-weight: bold; }
+        .card-desc { font-size: 13px; color: #6b7280; }
+        .news-card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; background: white; margin-bottom: 10px; }
+        .news-title { font-weight: bold; }
+        .news-meta { font-size: 12px; color: gray; }
     </style>
     """,
-    unsafe_allow_html=True,
+    unsafe_allow_html=True
 )
 
-# ------------------------------ HEADER ------------------------------
+# Main container
 st.markdown('<div class="app-container">', unsafe_allow_html=True)
-st.markdown('<div class="title">Finance Projects — Investment Banking Track</div>', unsafe_allow_html=True)
-st.markdown('<div class="subtitle">M&A monitoring, DCF valuation, and systematic backtesting — professional tools for deal-driven workflows.</div>', unsafe_allow_html=True)
 
-# ------------------------------ GRID CARDS ------------------------------
-st.markdown('<div class="grid">', unsafe_allow_html=True)
-
-# Card 1: M&A Dashboard
+st.markdown('<div class="page-title">Finance Projects</div>', unsafe_allow_html=True)
 st.markdown(
-    """
-    <div class="card">
-      <div class="card-title">M&A Deals Dashboard</div>
-      <div class="card-desc">FMP feed, time filters, sector/region/value screening, interactive timeline and table.</div>
-      <div class="btn-row">
-        <a class="btn btn-link" href="pages/1_M&A_Deals_Dashboard.py">Open</a>
-      </div>
-    </div>
-    """,
-    unsafe_allow_html=True,
+    '<div class="page-subtitle">Tools for Investment Banking: M&A Dashboard, DCF Lab, Portfolio Backtester.</div>',
+    unsafe_allow_html=True
 )
 
-# Card 2: DCF Lab
-st.markdown(
-    """
-    <div class="card">
-      <div class="card-title">DCF Valuation Lab</div>
-      <div class="card-desc">FCF projection, WACC, terminal value, scenario sensitivity, and PDF export.</div>
-      <div class="btn-row">
-        <a class="btn btn-link" href="pages/2_DCF_Lab.py">Open</a>
-      </div>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
+# Navigation cards
+projects = [
+    ("1_M&A_Deals_Dashboard.py", "M&A Deals Dashboard", "Live global deal feed."),
+    ("2_DCF_Lab.py", "DCF Lab", "Interactive discounted cash flow valuation."),
+    ("3_Backtester_Equity_Bonds.py", "Equity/Bond Backtester", "Portfolio analysis with key metrics."),
+]
 
-# Card 3: Backtester
-st.markdown(
-    """
-    <div class="card">
-      <div class="card-title">Equity & Bond Backtester</div>
-      <div class="card-desc">Historical returns, drawdowns, Sharpe, CAGR, benchmark comparison with adjustable parameters.</div>
-      <div class="btn-row">
-        <a class="btn btn-link" href="pages/3_Backtester_Equity_Bonds.py">Open</a>
-      </div>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
+for file, title, desc in projects:
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+    st.markdown(f'<div class="card-title">{title}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="card-desc">{desc}</div>', unsafe_allow_html=True)
+    try:
+        st.page_link(f"pages/{file}", label=f"Open {title}")
+    except:
+        st.write("Use the sidebar to navigate.")
+    st.markdown('</div>', unsafe_allow_html=True)
 
-st.markdown('</div>', unsafe_allow_html=True)  # end grid
+# News section
+st.markdown("### Investment Banking News")
+if "news_page" not in st.session_state:
+    st.session_state.news_page = 1
 
-# ------------------------------ NEWS PANEL ------------------------------
-st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
-st.markdown('<div class="section-title">Global News</div>', unsafe_allow_html=True)
+articles = fetch_news_page(page=st.session_state.news_page)
 
-# Barre de recherche (simple) + affichage résultats
-q_col1, q_col2 = st.columns([2, 1])
-with q_col1:
-    query = st.text_input("Search topic or company (e.g., Goldman Sachs, M&A, LBO):", value="M&A")
-with q_col2:
-    page_size = st.number_input("Results", min_value=3, max_value=20, value=8, step=1)
-
-articles = fetch_news(query=query, page_size=page_size) if query else []
-
-if not articles:
-    st.caption("No news available.")
+if articles:
+    for a in articles:
+        st.markdown('<div class="news-card">', unsafe_allow_html=True)
+        st.markdown(f'<div class="news-title">{a.get("title", "")}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="news-meta">{a.get("source", {}).get("name", "")} — {a.get("publishedAt", "")[:10]}</div>', unsafe_allow_html=True)
+        st.write(a.get("description", ""))
+        if a.get("url"):
+            st.link_button("Open article", a["url"])
+        st.markdown('</div>', unsafe_allow_html=True)
 else:
-    grid_cols = st.columns(2)
-    for idx, a in enumerate(articles):
-        col = grid_cols[idx % 2]
-        with col:
-            with st.container():
-                st.markdown('<div class="news-card">', unsafe_allow_html=True)
-                title = a.get("title", "")
-                source = (a.get("source") or {}).get("name", "")
-                published = a.get("publishedAt", "")
-                desc = a.get("description", "") or ""
-                url = a.get("url", "")
+    st.info("No news available.")
 
-                st.markdown(f'<div class="news-title">{title}</div>', unsafe_allow_html=True)
-                st.markdown(f'<div class="news-meta">{source} · {published}</div>', unsafe_allow_html=True)
-                st.markdown(f'<div class="news-desc">{desc}</div>', unsafe_allow_html=True)
-                if url:
-                    st.link_button("Open article", url)
-                st.markdown('</div>', unsafe_allow_html=True)
+if st.button("Reload news"):
+    st.session_state.news_page += 1
+    st.experimental_rerun()
 
-st.markdown('</div>', unsafe_allow_html=True)  # end app-container
+st.markdown('</div>', unsafe_allow_html=True)  # end container
