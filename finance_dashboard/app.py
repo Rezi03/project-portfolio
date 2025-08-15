@@ -77,28 +77,24 @@ projects = [
         "id": "banking-market-intelligence-dashboard",
         "title": "Banking Market Intelligence Dashboard",
         "desc": "An integrated platform providing live macroeconomic data, sector analysis, and market intelligence, tailored for investment banking professionals. Features real-time charts, comparative analytics, and curated insights for strategic decision-making.",
-        "media": "media/banking_demo.mp4",
         "page": "pages/0_Legacy_Analytics.py"
     },
     {
         "id": "ma-deals-dashboard",
         "title": "M&A Deals Dashboard",
         "desc": "Tracks global mergers and acquisitions with live updates, filtering by sector, region, and deal size. Offers dynamic visualizations, deal timelines, and integrated financial metrics to support pitchbook preparation and client advisory.",
-        "media": "media/ma_demo.mp4",
         "page": "pages/1_M&A_Deals_Dashboard.py"
     },
     {
         "id": "dcf-lab",
         "title": "DCF Lab",
         "desc": "An interactive discounted cash flow modeling environment where assumptions such as WACC, growth rates, and exit multiples can be adjusted on the fly. Outputs instant valuations with sensitivity analysis for deal pricing and fairness opinions.",
-        "media": "media/dcf_demo.mp4",
         "page": "pages/2_DCF_Lab.py"
     },
     {
         "id": "equitybond-backtester",
         "title": "Equity/Bond Backtester",
         "desc": "Portfolio simulation tool allowing backtesting of equities and fixed income assets. Provides key performance indicators including CAGR, Sharpe ratio, drawdowns, and volatility metrics, with customizable date ranges and allocation weights.",
-        "media": "media/backtester_demo.mp4",
         "page": "pages/3_Backtester_Equity_Bonds.py"
     }
 ]
