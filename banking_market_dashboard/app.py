@@ -10,6 +10,8 @@ from fpdf import FPDF
 import tempfile
 import os
 from datetime import datetime
+import matplotlib.pyplot as plt
+
 
 st.cache_data.clear()
 
