@@ -1,12 +1,11 @@
 import streamlit as st
 import pandas as pd
 import requests
-import os
 from datetime import datetime
 
-# Load environment variables
-RAW_JSON_URL = os.getenv("RAW_JSON_URL", "https://raw.githubusercontent.com/Rezi03/project-portfolio/main/projects/ma-dashboard/deals.json")
-FMP_API_KEY = os.getenv("FMP_API_KEY", "")
+# Lecture des secrets
+FMP_API_KEY = st.secrets["FMP_API_KEY"]
+RAW_JSON_URL = st.secrets["RAW_JSON_URL"]
 
 st.set_page_config(page_title="M&A Deals Dashboard", layout="wide")
 
@@ -21,10 +20,10 @@ def load_deals():
         st.error(f"Error loading deals: {e}")
         return pd.DataFrame()
 
-# Title
+# Titre
 st.title("Global Mergers & Acquisitions Dashboard")
 
-# Load data
+# Charger les données
 df = load_deals()
 
 if df.empty:
@@ -33,7 +32,7 @@ else:
     st.metric("Number of Deals", len(df))
     st.dataframe(df.head(20))
 
-    # Filter section
+    # Filtres
     st.sidebar.header("Filters")
     min_value = st.sidebar.date_input("From Date", datetime(2023, 1, 1))
     max_value = st.sidebar.date_input("To Date", datetime.today())
@@ -47,7 +46,7 @@ else:
     st.subheader("Filtered Deals")
     st.dataframe(filtered)
 
-    # Chart example
+    # Graphique
     if "date" in filtered.columns:
         deals_per_month = filtered.groupby(filtered["date"].dt.to_period("M")).size()
         st.bar_chart(deals_per_month)

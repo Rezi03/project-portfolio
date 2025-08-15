@@ -3,10 +3,19 @@ import json
 import os
 from datetime import datetime
 
-FMP_API_KEY = os.getenv("FMP_API_KEY", "YOUR_FMP_KEY")
+# Essayer de charger la clé depuis secrets.toml (local) sinon depuis variable d'environnement
+try:
+    import toml
+    secrets = toml.load(".streamlit/secrets.toml")
+    FMP_API_KEY = secrets.get("FMP_API_KEY", "")
+except Exception:
+    FMP_API_KEY = os.getenv("FMP_API_KEY", "")
+
 OUTPUT_FILE = os.path.join(os.path.dirname(__file__), "deals.json")
 
 def fetch_ma_deals():
+    if not FMP_API_KEY:
+        raise ValueError("❌ Missing FMP_API_KEY")
     url = f"https://financialmodelingprep.com/api/v4/mergers-acquisitions?apikey={FMP_API_KEY}"
     response = requests.get(url, timeout=10)
     if response.status_code != 200:
