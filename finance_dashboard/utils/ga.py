@@ -1,13 +1,11 @@
-# utils/ga.py
 import streamlit as st
 import streamlit.components.v1 as components
 
 _HTML = """
-<!-- GA4 -->
 <script async src="https://www.googletagmanager.com/gtag/js?id={mid}"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
-  function gtag(){{dataLayer.push(arguments);}}
+  function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
   gtag('config', '{mid}');
 </script>

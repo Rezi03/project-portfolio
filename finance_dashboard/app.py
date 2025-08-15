@@ -1,100 +1,139 @@
-# app.py — Hub d’accueil
 import streamlit as st
 from utils.ga import inject_ga4
+from utils.news import fetch_news
 
 st.set_page_config(
-    page_title="Finance Projects Hub — IB Track",
-    page_icon="💼",
+    page_title="Finance Projects — IB Track",
     layout="wide",
-    menu_items={
-        "Get Help": None,
-        "Report a bug": None,
-        "About": "Interactive finance portfolio tailored for Investment Banking applications (GS/MS/JPM/BoA)."
-    }
 )
 
-# GA4 tracking
+# GA4 tracking (silencieux)
 inject_ga4()
 
-# ---- STYLE LÉGER
+# ---------- Global style (CSS minimal, typographie et alignements) ----------
 st.markdown(
     """
     <style>
-      .big-title {font-size:2.1rem; font-weight:700; margin-bottom:0.2rem;}
-      .sub {color:#666; margin-top:0; font-size:0.95rem;}
-      .card {
-        padding: 1.0rem 1.2rem; border:1px solid #e7e7e7; border-radius:14px;
-        background: rgba(250,250,250,0.7);
+      :root {
+        --bg: #ffffff;
+        --fg: #0f172a;
+        --muted: #6b7280;
+        --border: #e5e7eb;
+        --card: #fafafa;
       }
-      .muted { color:#6b7280; }
-      .kbd {font-family: ui-monospace, SFMono-Regular, Menlo, monospace; background:#f1f5f9; padding:.15rem .35rem; border-radius:6px;}
+      .app-container { max-width: 1200px; margin: 0 auto; }
+      .title { font-size: 28px; font-weight: 700; letter-spacing: 0.2px; margin: 8px 0 2px; color: var(--fg); }
+      .subtitle { font-size: 14px; color: var(--muted); margin: 0 0 24px; }
+      .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+      .card {
+        border: 1px solid var(--border);
+        background: var(--card);
+        border-radius: 16px;
+        padding: 18px;
+        transition: transform .12s ease, box-shadow .12s ease;
+      }
+      .card:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(0,0,0,0.06); }
+      .card-title { font-size: 18px; font-weight: 600; margin: 4px 0 4px; }
+      .card-desc { font-size: 13px; color: var(--muted); margin: 0 0 10px; min-height: 40px; }
+      .btn-row { display: flex; gap: 8px; align-items: center; }
+      .btn { border: 1px solid var(--border); padding: 8px 12px; border-radius: 10px; text-decoration: none; font-size: 13px; }
+      .btn-link { color: #111827; background: #fff; }
+      .section-title { font-size: 18px; font-weight: 600; margin: 24px 0 8px; }
+      .news-card { border: 1px solid var(--border); padding: 12px 14px; border-radius: 12px; background: #fff; }
+      .news-title { font-weight: 600; font-size: 14px; margin: 2px 0; }
+      .news-meta { color: var(--muted); font-size: 12px; margin-bottom: 6px; }
+      .news-desc { font-size: 13px; color: #374151; }
+      .divider { height: 1px; background: var(--border); margin: 28px 0 10px; }
     </style>
     """,
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
 
-# ---- HEADER
-st.markdown('<div class="big-title">Finance Projects — Investment Banking Track</div>', unsafe_allow_html=True)
-st.markdown('<p class="sub">M&A quasi temps réel • DCF interactif • Backtester Actions/Obligations • GA4 usage tracking</p>', unsafe_allow_html=True)
+# ------------------------------ HEADER ------------------------------
+st.markdown('<div class="app-container">', unsafe_allow_html=True)
+st.markdown('<div class="title">Finance Projects — Investment Banking Track</div>', unsafe_allow_html=True)
+st.markdown('<div class="subtitle">M&A monitoring, DCF valuation, and systematic backtesting — professional tools for deal-driven workflows.</div>', unsafe_allow_html=True)
 
-# ---- SECTION: NAVIGATION RAPIDE
-st.write("")
-c1, c2, c3 = st.columns(3)
-with c1:
-    st.markdown("### 📈 M&A Deals Dashboard")
-    st.markdown(
-        "Flux FMP, filtres par date/secteur/valeur, timeline interactive, news. "
-        "Montre ta capacité à suivre l’activité de marché quasi en temps réel."
-    )
-    st.page_link("pages/1_M&A_Deals_Dashboard.py", label="Ouvrir M&A Dashboard →")
+# ------------------------------ GRID CARDS ------------------------------
+st.markdown('<div class="grid">', unsafe_allow_html=True)
 
-with c2:
-    st.markdown("### 💡 DCF Lab")
-    st.markdown(
-        "Valorisation par flux actualisés (FCF), WACC, terminal value, sensibilité g/WACC, export PDF. "
-        "Montre ta compréhension des fondamentaux IB."
-    )
-    st.page_link("pages/2_DCF_Lab.py", label="Ouvrir DCF Lab →")
-
-with c3:
-    st.markdown("### 🔎 Backtester Actions/Obligations")
-    st.markdown(
-        "Télécharge des séries (yfinance), métriques de perf/risque (CAGR, Sharpe, MaxDD), comparaison benchmark. "
-        "Montre rigueur et culture marché."
-    )
-    st.page_link("pages/3_Backtester_Equity_Bonds.py", label="Ouvrir Backtester →")
-
-st.write("")
-st.divider()
-
-# ---- SECTION: CONSEILS CANDIDATURE IB
-st.markdown("#### 🎯 Pourquoi c’est pertinent pour l’IB (ex. Goldman Sachs)")
+# Card 1: M&A Dashboard
 st.markdown(
-    "- **Orientation deal-driven** : Monitoring M&A live + news.\n"
-    "- **Valo** : DCF propre, hypothèses transparentes, sensis, export rapport.\n"
-    "- **Rigueur marchés** : Backtests clairs, lecture risque/rendement.\n"
-    "- **Data/Produit** : App web structurée, traçable (GA4), réutilisable en entretien.\n"
+    """
+    <div class="card">
+      <div class="card-title">M&A Deals Dashboard</div>
+      <div class="card-desc">FMP feed, time filters, sector/region/value screening, interactive timeline and table.</div>
+      <div class="btn-row">
+        <a class="btn btn-link" href="pages/1_M&A_Deals_Dashboard.py">Open</a>
+      </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
 )
 
-with st.expander("📌 Tips pour CV/entretiens (à recycler dans tes bullet points)"):
-    st.markdown(
-        """
-        - Built a **real-time M&A monitoring** app using FMP API, **filtered by sector/region/value**, with interactive visuals and news aggregation.
-        - Designed a **DCF valuation lab** with scenario analysis and **PDF export** for investment memos.
-        - Implemented an **equity/bond backtester** with performance & risk metrics (CAGR, Sharpe, Max Drawdown), **benchmarking** and parameter controls.
-        - Instrumented **GA4 analytics** to track feature usage and identify the most impactful modules.
-        """
-    )
-
-st.write("")
-st.caption("Astuce : si le bouton `Ouvrir →` n’apparaît pas, utilise le menu **Pages** dans la sidebar Streamlit.")
-
-# ---- FOOTER D'INFOS
-st.write("")
+# Card 2: DCF Lab
 st.markdown(
-    '<div class="card">'
-    '<span class="muted">Sécurité :</span> Les clés (FMP, NewsAPI, GA4) sont stockées dans <span class="kbd">.streamlit/secrets.toml</span> '
-    "ou dans les <em>Secrets</em> de Streamlit Cloud. Aucun secret n’est commité sur GitHub."
-    "</div>",
-    unsafe_allow_html=True
+    """
+    <div class="card">
+      <div class="card-title">DCF Valuation Lab</div>
+      <div class="card-desc">FCF projection, WACC, terminal value, scenario sensitivity, and PDF export.</div>
+      <div class="btn-row">
+        <a class="btn btn-link" href="pages/2_DCF_Lab.py">Open</a>
+      </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
 )
+
+# Card 3: Backtester
+st.markdown(
+    """
+    <div class="card">
+      <div class="card-title">Equity & Bond Backtester</div>
+      <div class="card-desc">Historical returns, drawdowns, Sharpe, CAGR, benchmark comparison with adjustable parameters.</div>
+      <div class="btn-row">
+        <a class="btn btn-link" href="pages/3_Backtester_Equity_Bonds.py">Open</a>
+      </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+st.markdown('</div>', unsafe_allow_html=True)  # end grid
+
+# ------------------------------ NEWS PANEL ------------------------------
+st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
+st.markdown('<div class="section-title">Global News</div>', unsafe_allow_html=True)
+
+# Barre de recherche (simple) + affichage résultats
+q_col1, q_col2 = st.columns([2, 1])
+with q_col1:
+    query = st.text_input("Search topic or company (e.g., Goldman Sachs, M&A, LBO):", value="M&A")
+with q_col2:
+    page_size = st.number_input("Results", min_value=3, max_value=20, value=8, step=1)
+
+articles = fetch_news(query=query, page_size=page_size) if query else []
+
+if not articles:
+    st.caption("No news available.")
+else:
+    grid_cols = st.columns(2)
+    for idx, a in enumerate(articles):
+        col = grid_cols[idx % 2]
+        with col:
+            with st.container():
+                st.markdown('<div class="news-card">', unsafe_allow_html=True)
+                title = a.get("title", "")
+                source = (a.get("source") or {}).get("name", "")
+                published = a.get("publishedAt", "")
+                desc = a.get("description", "") or ""
+                url = a.get("url", "")
+
+                st.markdown(f'<div class="news-title">{title}</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="news-meta">{source} · {published}</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="news-desc">{desc}</div>', unsafe_allow_html=True)
+                if url:
+                    st.link_button("Open article", url)
+                st.markdown('</div>', unsafe_allow_html=True)
+
+st.markdown('</div>', unsafe_allow_html=True)  # end app-container
