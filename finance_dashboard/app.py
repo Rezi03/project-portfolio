@@ -14,14 +14,12 @@ import matplotlib.pyplot as plt
 
 st.cache_data.clear()
 
-# --- PAGE CONFIG ---
 st.set_page_config(
     page_title="Banking Market Intelligence Dashboard",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# --- CONSTANTS ---
 TICKERS = {
     "Goldman Sachs": "GS",
     "Morgan Stanley": "MS",
@@ -30,11 +28,10 @@ TICKERS = {
     "Bank of America": "BAC",
     "Barclays (LSE)": "BARC.L"
 }
-BENCHMARK = "^GSPC"  # S&P 500 as benchmark
+BENCHMARK = "^GSPC" 
 
 NEWS_API_KEY = st.secrets.get("NEWSAPI_KEY") if "NEWSAPI_KEY" in st.secrets else None
 
-# --- CACHE HELPERS ---
 @st.cache_data(ttl=0, show_spinner=False)
 def fetch_history(ticker, period="1y", interval="1d"):
     try:
@@ -54,7 +51,6 @@ def fetch_info(ticker):
     except Exception:
         return {}
 
-# --- FINANCIAL METRICS ---
 def sma(series, window):
     return series.rolling(window).mean()
 
@@ -154,13 +150,11 @@ def alpha_annualized(df, benchmark_df, risk_free_rate=0.02):
     except Exception:
         return np.nan
 
-# --- BACKTEST / EQUITY CURVE ---
 def simulate_investment(df, initial_capital=1.0):
     returns = df['Close'].pct_change().fillna(0)
     equity = (1 + returns).cumprod()
     return equity
 
-# --- ALERTS ---
 def generate_alerts(df):
     alerts = []
     try:
@@ -177,13 +171,12 @@ def generate_alerts(df):
             alerts.append("Price below SMA200 → bearish long-term signal")
 
         vol = rolling_volatility(df, window=21)
-        if not vol.empty and vol.iloc[-1] > 0.6:  # threshold adjustable
+        if not vol.empty and vol.iloc[-1] > 0.6: 
             alerts.append("High annualized volatility (>60%)")
     except Exception:
         pass
     return alerts
 
-# --- NEWS ---
 def get_news(query):
     if not NEWS_API_KEY:
         return []
@@ -196,7 +189,6 @@ def get_news(query):
     except Exception:
         return []
 
-# --- Matplotlib fallback helpers ---
 def create_placeholder_png(message="Chart not available"):
     buf = BytesIO()
     plt.figure(figsize=(8, 3))
@@ -209,10 +201,9 @@ def create_placeholder_png(message="Chart not available"):
     return buf.getvalue()
 
 def render_chart_bytes(name, fig_obj=None, df=None, title="Chart"):
-    # Try plotly->kaleido first
     if fig_obj is not None:
         try:
-            import kaleido  # noqa: F401
+            import kaleido  
             try:
                 img_bytes = fig_obj.to_image(format="png")
                 if img_bytes:
@@ -222,7 +213,6 @@ def render_chart_bytes(name, fig_obj=None, df=None, title="Chart"):
         except Exception:
             pass
 
-    # Fallback matplotlib render from df
     if df is None or df.empty:
         return create_placeholder_png(f"{title} - no data")
 
@@ -306,9 +296,6 @@ def render_chart_bytes(name, fig_obj=None, df=None, title="Chart"):
     except Exception as e:
         return create_placeholder_png(f"Render error: {str(e)[:80]}")
 
-# ---------------------------
-# Rule-based automated analysis
-# ---------------------------
 def generate_analysis(df, metrics, rf_rate=0.02):
     """
     df : DataFrame (with Close, RSI, SMA50, SMA200, RollingVol21 fields if available)
@@ -339,7 +326,6 @@ def generate_analysis(df, metrics, rf_rate=0.02):
     bullets = []
     score = 0
 
-    # Trend (SMA cross)
     try:
         if 'SMA50' in df.columns and 'SMA200' in df.columns:
             if df['SMA50'].iloc[-1] > df['SMA200'].iloc[-1]:
@@ -351,7 +337,6 @@ def generate_analysis(df, metrics, rf_rate=0.02):
     except Exception:
         pass
 
-    # RSI
     try:
         if 'RSI' in df.columns:
             rsi_now = df['RSI'].iloc[-1]
@@ -366,7 +351,6 @@ def generate_analysis(df, metrics, rf_rate=0.02):
     except Exception:
         pass
 
-    # Volatility
     try:
         if not np.isnan(vol):
             if vol > 0.6:
@@ -380,7 +364,6 @@ def generate_analysis(df, metrics, rf_rate=0.02):
     except Exception:
         pass
 
-    # Sharpe
     try:
         if not np.isnan(sharpe):
             if sharpe > 1:
@@ -394,14 +377,12 @@ def generate_analysis(df, metrics, rf_rate=0.02):
     except Exception:
         pass
 
-    # Sortino
     try:
         if not np.isnan(sortino):
             bullets.append(f"Sortino ratio: {fmt_ratio(sortino)} (focuses on downside risk).")
     except Exception:
         pass
 
-    # VaR & Drawdown
     try:
         if not np.isnan(var95):
             bullets.append(f"VaR 95%: {fmt_pct(var95)}.")
@@ -413,7 +394,6 @@ def generate_analysis(df, metrics, rf_rate=0.02):
     except Exception:
         pass
 
-    # Beta & Alpha
     try:
         if not np.isnan(beta):
             bullets.append(f"Beta vs benchmark: {fmt_ratio(beta)} (market sensitivity).")
@@ -425,14 +405,12 @@ def generate_analysis(df, metrics, rf_rate=0.02):
     except Exception:
         pass
 
-    # CAGR / annual return
     try:
         if not np.isnan(cagr_val):
             bullets.append(f"CAGR: {fmt_pct(cagr_val)}.")
     except Exception:
         pass
 
-    # Recommendation
     recs = []
     if score >= 2:
         recs.append("Overall signal: Positive — consider cautious allocation.")
@@ -441,7 +419,6 @@ def generate_analysis(df, metrics, rf_rate=0.02):
     else:
         recs.append("Overall signal: Neutral — monitor indicators for confirmation.")
 
-    # Paragraph summary
     parts = []
     parts.append(f"Over the selected period the annualized return is {fmt_pct(annual_ret)} and annualized volatility is {fmt_pct(vol)}.")
     if not np.isnan(sharpe):
@@ -456,13 +433,11 @@ def generate_analysis(df, metrics, rf_rate=0.02):
     analysis_bullets = bullets + [""] + recs
     return analysis_text, analysis_bullets
 
-# --- SIDEBAR UI ---
 st.sidebar.title("Controls")
 tab = st.sidebar.radio("Tabs", ["Dashboard", "News"])
 st.sidebar.markdown("---")
 st.sidebar.caption("Built with Streamlit, yfinance, Plotly")
 
-# --- MAIN ---
 if tab == "Dashboard":
     st.markdown("<h1 style='font-family:-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto;'>Banking Market Intelligence Dashboard</h1>", unsafe_allow_html=True)
     mode = st.sidebar.radio("Mode", ["Single Bank", "Comparison"])
@@ -482,14 +457,12 @@ if tab == "Dashboard":
         else:
             benchmark_df = fetch_history(BENCHMARK, period, interval)
 
-            # Technical indicators
             if show_tech:
                 df['SMA50'] = sma(df['Close'], 50)
                 df['SMA200'] = sma(df['Close'], 200)
                 df['RSI'] = compute_rsi(df['Close'])
                 df['RollingVol21'] = rolling_volatility(df, window=21)
 
-            # Key metrics
             last_price = df['Close'].iloc[-1]
             market_cap = info.get('marketCap', None)
             cagr_val = cagr(df)
@@ -502,7 +475,6 @@ if tab == "Dashboard":
             alpha_ann = alpha_annualized(df, benchmark_df, risk_free_rate=rf_rate)
             treynor = (annual_ret - rf_rate) / beta if (not np.isnan(annual_ret) and not np.isnan(beta) and beta != 0) else np.nan
 
-            # Display metrics
             col1, col2, col3, col4, col5 = st.columns(5)
             col1.metric("Last Price (USD)", f"{last_price:.2f}")
             col2.metric("Market Cap", f"{market_cap:,}" if market_cap else "N/A")
@@ -517,7 +489,6 @@ if tab == "Dashboard":
             col9.metric("Alpha (ann.)", f"{alpha_ann*100:.2f}%" if not np.isnan(alpha_ann) else "N/A")
             col10.metric("Treynor Ratio", f"{treynor:.2f}" if not np.isnan(treynor) else "N/A")
 
-            # Price candlestick
             fig_price = go.Figure(data=[go.Candlestick(
                 x=df['Date'], open=df['Open'], high=df['High'],
                 low=df['Low'], close=df['Close'], name='Price'
@@ -525,7 +496,6 @@ if tab == "Dashboard":
             fig_price.update_layout(title=f"{bank} Price Evolution", xaxis_rangeslider_visible=False, template="plotly_white", height=480)
             st.plotly_chart(fig_price, use_container_width=True)
 
-            # Secondary charts row
             left, right = st.columns([2,1])
             with left:
                 if show_tech:
@@ -541,31 +511,24 @@ if tab == "Dashboard":
                     st.plotly_chart(fig_rsi, use_container_width=True)
 
             with right:
-                # Risk & distribution
                 fig_hist = px.histogram(df.assign(Returns=df['Close'].pct_change()), x='Returns', nbins=50, title="Daily Returns Distribution", template="plotly_white", height=300)
                 st.plotly_chart(fig_hist, use_container_width=True)
 
-                # Equity curve
                 equity = simulate_investment(df)
                 fig_eq = go.Figure()
                 fig_eq.add_trace(go.Scatter(x=df['Date'], y=equity, name='Equity Curve'))
                 fig_eq.update_layout(title="Equity Curve (1 unit invested)", template="plotly_white", height=300)
                 st.plotly_chart(fig_eq, use_container_width=True)
 
-                # Alerts
                 alerts = generate_alerts(df)
                 if alerts:
                     st.warning(" | ".join(alerts))
 
-            # Rolling volatility chart
             if 'RollingVol21' not in df.columns:
                 df['RollingVol21'] = rolling_volatility(df, window=21)
             fig_roll = px.line(df, x='Date', y='RollingVol21', title="21-day Rolling Volatility (annualized)", template="plotly_white", height=220)
             st.plotly_chart(fig_roll, use_container_width=True)
 
-            # -------------------------
-            # Automated summary + rule-based analysis
-            # -------------------------
             metrics_for_analysis = {
                 "annual_ret": annual_ret,
                 "vol": vol,
@@ -580,7 +543,6 @@ if tab == "Dashboard":
 
             analysis_text, analysis_bullets = generate_analysis(df, metrics_for_analysis, rf_rate=rf_rate)
 
-            # UI display
             st.markdown("**Automated numerical summary:**")
             summary_lines = []
             if not np.isnan(annual_ret):
@@ -605,9 +567,6 @@ if tab == "Dashboard":
                 if b:
                     st.write("- " + b)
 
-            # -------------------------
-            # PDF EXPORT (safe, DejaVu unicode)
-            # -------------------------
             st.markdown("### Generate a structured PDF report")
             generate_col1, generate_col2 = st.columns([3,1])
             with generate_col1:
@@ -624,12 +583,11 @@ if tab == "Dashboard":
                     ]
                     tmp_files = []
                     try:
-                        # Render images
                         for name, fig, title in figs_to_save:
                             img_bytes = None
                             if fig is not None:
                                 try:
-                                    import kaleido  # noqa
+                                    import kaleido 
                                     img_bytes = fig.to_image(format="png")
                                 except Exception:
                                     img_bytes = render_chart_bytes(name, fig_obj=None, df=df, title=title)
@@ -645,20 +603,15 @@ if tab == "Dashboard":
                             tmp_files.append(tmp.name)
                             tmp.close()
 
-                        # Build PDF
                         pdf = FPDF(unit="pt", format="A4")
                         FONT_PATH = os.path.join(os.path.dirname(__file__), "fonts", "DejaVuSans.ttf")
-                        # Add DejaVu normal only (no bold variant required)
                         try:
                             pdf.add_font("DejaVu", "", FONT_PATH, uni=True)
                         except Exception:
-                            # fallback: if font not found, proceed with default (may fail on accents)
                             pass
                         pdf.set_auto_page_break(auto=True, margin=36)
 
-                        # Cover
                         pdf.add_page()
-                        # If DejaVu added, use it, else fallback to default
                         try:
                             pdf.set_font("DejaVu", size=18)
                         except Exception:
@@ -672,7 +625,6 @@ if tab == "Dashboard":
                         pdf.multi_cell(0, 12, f"Report generated: {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}", align="C")
                         pdf.multi_cell(0, 12, f"Period: {period} | Interval: {interval}", align="C")
 
-                        # Metrics page
                         pdf.add_page()
                         try:
                             pdf.set_font("DejaVu", size=14)
@@ -697,7 +649,6 @@ if tab == "Dashboard":
                         pdf.cell(0, 12, f"Alpha (ann.): {alpha_ann*100:.2f}%" if not np.isnan(alpha_ann) else "Alpha (ann.): N/A", ln=True)
                         pdf.cell(0, 12, f"VaR 95%: {var95*100:.2f}%" if not np.isnan(var95) else "VaR 95%: N/A", ln=True)
 
-                        # Automated summary
                         pdf.ln(8)
                         try:
                             pdf.set_font("DejaVu", size=12)
@@ -724,7 +675,6 @@ if tab == "Dashboard":
                             if b:
                                 pdf.multi_cell(0, 10, "- " + b)
 
-                        # Charts pages
                         for path in tmp_files:
                             pdf.add_page()
                             try:
@@ -741,14 +691,11 @@ if tab == "Dashboard":
                                 except Exception:
                                     pdf.set_font("Helvetica", size=10)
                                 pdf.cell(0, 12, f"Chart {os.path.basename(path)} could not be embedded.", ln=True)
-                        # Output bytes (latin1 ignore - robust)
                         try:
                             pdf_bytes = pdf.output(dest="S").encode("latin1", "ignore")
                         except Exception:
-                            # Fallback to utf-8 encode if latin1 fails
                             pdf_bytes = pdf.output(dest="S").encode("utf-8", "ignore")
 
-                        # Download button
                         st.download_button(
                             label="Download PDF",
                             data=pdf_bytes,
@@ -764,7 +711,7 @@ if tab == "Dashboard":
                             except Exception:
                                 pass
 
-    else:  # Comparison mode
+    else: 
         banks = st.sidebar.multiselect("Select banks", list(TICKERS.keys()), default=["Goldman Sachs", "Morgan Stanley"])
         if len(banks) < 2:
             st.warning("Select at least two banks for comparison.")
@@ -773,7 +720,6 @@ if tab == "Dashboard":
             for b in banks:
                 data[b] = fetch_history(TICKERS[b], period, interval)
 
-            # Normalized cumulative returns plot
             fig = go.Figure()
             for bank, dfb in data.items():
                 if not dfb.empty and 'Close' in dfb.columns:
@@ -783,7 +729,6 @@ if tab == "Dashboard":
             fig.update_layout(title="Normalized Cumulative Returns", template="plotly_white")
             st.plotly_chart(fig, use_container_width=True)
 
-            # Metrics table for comparison
             metrics = []
             for b in banks:
                 dfb = data[b]
@@ -800,7 +745,6 @@ if tab == "Dashboard":
                 })
             st.dataframe(pd.DataFrame(metrics))
 
-            # Correlation heatmap
             returns_df = pd.DataFrame()
             for b in banks:
                 dfb = data[b].set_index('Date').sort_index()
