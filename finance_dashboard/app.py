@@ -445,26 +445,31 @@ if main_tab == "Dashboard":
     show_tech = st.sidebar.checkbox("Show technical indicators", value=True)
     rf_rate = st.sidebar.number_input("Risk-free rate (annual, e.g. 0.02)", value=0.02, step=0.005, format="%.4f")
 
+if main_tab == "Dashboard":
+    mode = st.sidebar.radio("Mode", ["Single Bank", "Comparison"])
+    period = st.sidebar.selectbox("Period", ["1mo", "3mo", "6mo", "1y", "5y"], index=3)
+    interval = st.sidebar.selectbox("Interval", ["1d", "1wk"], index=0)
+    show_tech = st.sidebar.checkbox("Show technical indicators", value=True)
+    rf_rate = st.sidebar.number_input("Risk-free rate (annual, e.g. 0.02)", value=0.02, step=0.005, format="%.4f")
+
     if mode == "Single Bank":
         bank = st.sidebar.selectbox("Select bank", list(TICKERS.keys()))
         ticker = TICKERS[bank]
         df = fetch_history(ticker, period, interval)
-        info = {}
-        try:
-            info = yf.Ticker(ticker).info
-        except Exception:
-            info = {}
-        if df.empty or 'Close' not in df.columns or df['Close'].isnull().all():
+        benchmark_df = fetch_history(BENCHMARK, period, interval)
+        info = fetch_info(ticker)
+
+        if df.empty or "Close" not in df.columns or df["Close"].isnull().all():
             st.error("No market data available for this bank and period.")
         else:
-            benchmark_df = fetch_history(BENCHMARK, period, interval)
             if show_tech:
-                df['SMA50'] = sma(df['Close'], 50)
-                df['SMA200'] = sma(df['Close'], 200)
-                df['RSI'] = compute_rsi(df['Close'])
-                df['RollingVol21'] = rolling_volatility(df, window=21)
-            last_price = df['Close'].iloc[-1]
-            market_cap = info.get('marketCap', None)
+                df["SMA50"] = sma(df["Close"], 50)
+                df["SMA200"] = sma(df["Close"], 200)
+                df["RSI"] = compute_rsi(df["Close"])
+                df["RollingVol21"] = rolling_volatility(df, window=21)
+
+            last_price = df["Close"].iloc[-1]
+            market_cap = info.get("marketCap")
             cagr_val = cagr(df)
             max_dd = max_drawdown(df)
             sharpe = sharpe_ratio(df, risk_free_rate=rf_rate)
@@ -475,51 +480,54 @@ if main_tab == "Dashboard":
             alpha_ann = alpha_annualized(df, benchmark_df, risk_free_rate=rf_rate)
             treynor = (annual_ret - rf_rate) / beta if (not np.isnan(annual_ret) and not np.isnan(beta) and beta != 0) else np.nan
 
-            col1, col2, col3, col4, col5 = st.columns(5)
-            col1.metric("Last Price (USD)", f"{last_price:.2f}")
-            col2.metric("Market Cap", f"{market_cap:,}" if market_cap else "N/A")
-            col3.metric("CAGR (annual)", f"{cagr_val*100:.2f}%" if not np.isnan(cagr_val) else "N/A")
-            col4.metric("Max Drawdown", f"{max_dd*100:.2f}%" if not np.isnan(max_dd) else "N/A")
-            col5.metric("Sharpe Ratio", f"{sharpe:.2f}" if not np.isnan(sharpe) else "N/A")
+            c1, c2, c3, c4, c5 = st.columns(5)
+            c1.metric("Last Price (USD)", f"{last_price:.2f}")
+            c2.metric("Market Cap", f"{market_cap:,}" if market_cap else "N/A")
+            c3.metric("CAGR (annual)", f"{cagr_val*100:.2f}%" if not np.isnan(cagr_val) else "N/A")
+            c4.metric("Max Drawdown", f"{max_dd*100:.2f}%" if not np.isnan(max_dd) else "N/A")
+            c5.metric("Sharpe Ratio", f"{sharpe:.2f}" if not np.isnan(sharpe) else "N/A")
 
-            col6, col7, col8, col9, col10 = st.columns(5)
-            col6.metric("Sortino Ratio", f"{sortino:.2f}" if not np.isnan(sortino) else "N/A")
-            col7.metric("Annual Volatility", f"{vol*100:.2f}%" if not np.isnan(vol) else "N/A")
-            col8.metric("Beta vs S&P500", f"{beta:.2f}" if not np.isnan(beta) else "N/A")
-            col9.metric("Alpha (ann.)", f"{alpha_ann*100:.2f}%" if not np.isnan(alpha_ann) else "N/A")
-            col10.metric("Treynor Ratio", f"{treynor:.2f}" if not np.isnan(treynor) else "N/A")
+            c6, c7, c8, c9, c10 = st.columns(5)
+            c6.metric("Sortino Ratio", f"{sortino:.2f}" if not np.isnan(sortino) else "N/A")
+            c7.metric("Annual Volatility", f"{vol*100:.2f}%" if not np.isnan(vol) else "N/A")
+            c8.metric("Beta vs S&P500", f"{beta:.2f}" if not np.isnan(beta) else "N/A")
+            c9.metric("Alpha (ann.)", f"{alpha_ann*100:.2f}%" if not np.isnan(alpha_ann) else "N/A")
+            c10.metric("Treynor Ratio", f"{treynor:.2f}" if not np.isnan(treynor) else "N/A")
 
-            fig_price = go.Figure(data=[go.Candlestick(x=df['Date'], open=df['Open'], high=df['High'], low=df['Low'], close=df['Close'], name='Price')])
+            fig_price = go.Figure(data=[go.Candlestick(x=df["Date"], open=df["Open"], high=df["High"], low=df["Low"], close=df["Close"])])
             fig_price.update_layout(title=f"{bank} Price Evolution", xaxis_rangeslider_visible=False, template="plotly_white", height=480)
             st.plotly_chart(fig_price, use_container_width=True)
 
-            left, right = st.columns([2,1])
-            with left:
-                if show_tech:
-                    fig_sma = go.Figure()
-                    fig_sma.add_trace(go.Scatter(x=df['Date'], y=df['Close'], name='Close', mode='lines'))
-                    fig_sma.add_trace(go.Scatter(x=df['Date'], y=df['SMA50'], name='SMA50', mode='lines'))
-                    fig_sma.add_trace(go.Scatter(x=df['Date'], y=df['SMA200'], name='SMA200', mode='lines'))
-                    fig_sma.update_layout(title="Price with SMAs", template="plotly_white", height=350)
+            left, right = st.columns([2, 1])
+            if show_tech:
+                fig_sma = go.Figure()
+                fig_sma.add_trace(go.Scatter(x=df["Date"], y=df["Close"], name="Close", mode="lines"))
+                fig_sma.add_trace(go.Scatter(x=df["Date"], y=df["SMA50"], name="SMA50", mode="lines"))
+                fig_sma.add_trace(go.Scatter(x=df["Date"], y=df["SMA200"], name="SMA200", mode="lines"))
+                fig_sma.update_layout(title="Price with SMAs", template="plotly_white", height=350)
+                with left:
                     st.plotly_chart(fig_sma, use_container_width=True)
-                    fig_rsi = px.line(df, x='Date', y='RSI', title="RSI (14)", template="plotly_white", height=220)
-                    fig_rsi.update_yaxes(range=[0,100])
+                fig_rsi = px.line(df, x="Date", y="RSI", title="RSI (14)", template="plotly_white", height=220)
+                fig_rsi.update_yaxes(range=[0, 100])
+                with left:
                     st.plotly_chart(fig_rsi, use_container_width=True)
-            with right:
-                fig_hist = px.histogram(df.assign(Returns=df['Close'].pct_change()), x='Returns', nbins=50, title="Daily Returns Distribution", template="plotly_white", height=300)
-                st.plotly_chart(fig_hist, use_container_width=True)
-                equity = simulate_investment(df)
-                fig_eq = go.Figure()
-                fig_eq.add_trace(go.Scatter(x=df['Date'], y=equity, name='Equity Curve'))
-                fig_eq.update_layout(title="Equity Curve (1 unit invested)", template="plotly_white", height=300)
-                st.plotly_chart(fig_eq, use_container_width=True)
-                alerts = generate_alerts(df)
-                if alerts:
-                    st.warning(" | ".join(alerts))
 
-            if 'RollingVol21' not in df.columns:
-                df['RollingVol21'] = rolling_volatility(df, window=21)
-            fig_roll = px.line(df, x='Date', y='RollingVol21', title="21-day Rolling Volatility (annualized)", template="plotly_white", height=220)
+            fig_hist = px.histogram(df.assign(Returns=df["Close"].pct_change()), x="Returns", nbins=50, title="Daily Returns Distribution", template="plotly_white", height=300)
+            with right:
+                st.plotly_chart(fig_hist, use_container_width=True)
+            equity = simulate_investment(df)
+            fig_eq = go.Figure()
+            fig_eq.add_trace(go.Scatter(x=df["Date"], y=equity, name="Equity Curve"))
+            fig_eq.update_layout(title="Equity Curve (1 unit invested)", template="plotly_white", height=300)
+            with right:
+                st.plotly_chart(fig_eq, use_container_width=True)
+            alerts = generate_alerts(df)
+            if alerts:
+                st.warning(" | ".join(alerts))
+
+            if "RollingVol21" not in df.columns:
+                df["RollingVol21"] = rolling_volatility(df, window=21)
+            fig_roll = px.line(df, x="Date", y="RollingVol21", title="21-day Rolling Volatility (annualized)", template="plotly_white", height=220)
             st.plotly_chart(fig_roll, use_container_width=True)
 
             metrics_for_analysis = {
@@ -536,22 +544,22 @@ if main_tab == "Dashboard":
             analysis_text, analysis_bullets = generate_analysis(df, metrics_for_analysis, rf_rate=rf_rate)
 
             st.markdown("**Automated numerical summary:**")
-            summary_lines = []
+            summary_parts = []
             if not np.isnan(annual_ret):
-                summary_lines.append(f"Annualized return: {annual_ret*100:.2f}%")
+                summary_parts.append(f"Annualized return: {annual_ret*100:.2f}%")
             if not np.isnan(vol):
-                summary_lines.append(f"Annualized volatility: {vol*100:.2f}%")
+                summary_parts.append(f"Annualized volatility: {vol*100:.2f}%")
             if not np.isnan(sharpe):
-                summary_lines.append(f"Sharpe: {sharpe:.2f}")
+                summary_parts.append(f"Sharpe: {sharpe:.2f}")
             if not np.isnan(sortino):
-                summary_lines.append(f"Sortino: {sortino:.2f}")
+                summary_parts.append(f"Sortino: {sortino:.2f}")
             if not np.isnan(beta):
-                summary_lines.append(f"Beta vs S&P500: {beta:.2f}")
+                summary_parts.append(f"Beta vs S&P500: {beta:.2f}")
             if not np.isnan(alpha_ann):
-                summary_lines.append(f"Alpha (annualized): {alpha_ann*100:.2f}%")
+                summary_parts.append(f"Alpha (annualized): {alpha_ann*100:.2f}%")
             if not np.isnan(var95):
-                summary_lines.append(f"VaR 95%: {var95*100:.2f}%")
-            auto_text = " | ".join(summary_lines)
+                summary_parts.append(f"VaR 95%: {var95*100:.2f}%")
+            auto_text = " | ".join(summary_parts)
             st.code(auto_text, language="text")
 
             st.markdown("**Automated analysis (rule-based):**")
@@ -573,31 +581,30 @@ if main_tab == "Dashboard":
                     st.info("Add OPENAI_API_KEY to Streamlit secrets to enable AI insights.")
 
             st.markdown("### Generate a structured PDF report")
-            generate_col1, generate_col2 = st.columns([3,1])
-            with generate_col1:
+            g1, g2 = st.columns([3, 1])
+            with g1:
                 st.info("Report includes: cover, key metrics, automated summary, and embedded charts.")
-            with generate_col2:
-                if st.button("Generate PDF Report", key=f"gen_pdf_{ticker}", help="Create and download a structured PDF report"):
-                    figs_to_save = [
+            with g2:
+                if st.button("Generate PDF Report", key=f"gen_pdf_{bank}"):
+                    figs = [
                         ("price", fig_price, "Price"),
-                        ("sma", fig_sma if 'fig_sma' in locals() else None, "Price with SMAs"),
-                        ("rsi", fig_rsi if 'fig_rsi' in locals() else None, "RSI (14)"),
+                        ("sma", fig_sma if "fig_sma" in locals() else None, "Price with SMAs"),
+                        ("rsi", fig_rsi if "fig_rsi" in locals() else None, "RSI (14)"),
                         ("vol", fig_roll, "Rolling Volatility"),
                         ("equity", fig_eq, "Equity Curve"),
                         ("hist", fig_hist, "Daily Returns Distribution")
                     ]
                     tmp_files = []
                     try:
-                        for name, fig, title in figs_to_save:
-                            img_bytes = None
+                        for name, fig, title in figs:
                             if fig is not None:
                                 try:
                                     import kaleido
                                     img_bytes = fig.to_image(format="png")
                                 except Exception:
-                                    img_bytes = render_chart_bytes(name, fig_obj=None, df=df, title=title)
+                                    img_bytes = render_chart_bytes(name, df=df, title=title)
                             else:
-                                img_bytes = render_chart_bytes(name, fig_obj=None, df=df, title=title)
+                                img_bytes = render_chart_bytes(name, df=df, title=title)
                             if not img_bytes:
                                 img_bytes = create_placeholder_png(f"{title} - no image")
                             tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
@@ -606,9 +613,9 @@ if main_tab == "Dashboard":
                             tmp_files.append(tmp.name)
                             tmp.close()
                         pdf = FPDF(unit="pt", format="A4")
-                        FONT_PATH = os.path.join(os.path.dirname(__file__), "fonts", "DejaVuSans.ttf")
+                        font_path = os.path.join(os.path.dirname(__file__), "fonts", "DejaVuSans.ttf")
                         try:
-                            pdf.add_font("DejaVu", "", FONT_PATH, uni=True)
+                            pdf.add_font("DejaVu", "", font_path, uni=True)
                         except Exception:
                             pass
                         pdf.set_auto_page_break(auto=True, margin=36)
@@ -636,9 +643,9 @@ if main_tab == "Dashboard":
                         except Exception:
                             pdf.set_font("Helvetica", size=10)
                         pdf.ln(6)
-                        market_cap_str = f"{market_cap:,}" if market_cap else "N/A"
+                        mc = f"{market_cap:,}" if market_cap else "N/A"
                         pdf.cell(0, 12, f"Last Price: {last_price:.2f} USD", ln=True)
-                        pdf.cell(0, 12, f"Market Cap: {market_cap_str}", ln=True)
+                        pdf.cell(0, 12, f"Market Cap: {mc}", ln=True)
                         pdf.cell(0, 12, f"CAGR: {cagr_val*100:.2f}%" if not np.isnan(cagr_val) else "CAGR: N/A", ln=True)
                         pdf.cell(0, 12, f"Annualized Return: {annual_ret*100:.2f}%" if not np.isnan(annual_ret) else "Annualized Return: N/A", ln=True)
                         pdf.cell(0, 12, f"Annual Volatility: {vol*100:.2f}%" if not np.isnan(vol) else "Annual Volatility: N/A", ln=True)
@@ -695,9 +702,9 @@ if main_tab == "Dashboard":
                         st.download_button(
                             label="Download PDF",
                             data=pdf_bytes,
-                            file_name=f"{ticker}_financial_report.pdf",
+                            file_name=f"{bank}_financial_report.pdf",
                             mime="application/pdf",
-                            key=f"download_pdf_{ticker}"
+                            key=f"download_pdf_{bank}"
                         )
                     finally:
                         for p in tmp_files:
@@ -711,45 +718,50 @@ if main_tab == "Dashboard":
         if len(banks) < 2:
             st.warning("Select at least two banks for comparison.")
         else:
-            data = {}
-            for b in banks:
-                data[b] = fetch_history(TICKERS[b], period, interval)
+            data = {b: fetch_history(TICKERS[b], period, interval) for b in banks}
             fig = go.Figure()
-            for bank, dfb in data.items():
-                if not dfb.empty and 'Close' in dfb.columns:
-                    dfb_sorted = dfb.sort_values('Date')
-                    cum = (1 + dfb_sorted['Close'].pct_change().fillna(0)).cumprod()
-                    fig.add_trace(go.Scatter(x=dfb_sorted['Date'], y=cum, mode='lines', name=bank))
+            for b in banks:
+                dfb = data[b]
+                if not dfb.empty and "Close" in dfb.columns:
+                    dfb = dfb.sort_values("Date")
+                    cum = (1 + dfb["Close"].pct_change().fillna(0)).cumprod()
+                    fig.add_trace(go.Scatter(x=dfb["Date"], y=cum, mode="lines", name=b))
             fig.update_layout(title="Normalized Cumulative Returns", template="plotly_white")
             st.plotly_chart(fig, use_container_width=True)
-            metrics = []
+            rows = []
             for b in banks:
                 dfb = data[b]
                 if dfb.empty:
-                    metrics.append({"Bank": b, "CAGR": "N/A", "Sharpe": "N/A", "Volatility": "N/A"})
-                    continue
-                benchmark_df = fetch_history(BENCHMARK, period, interval)
-                beta_b, vol_b = beta_and_vol(dfb, benchmark_df)
-                metrics.append({
-                    "Bank": b,
-                    "CAGR": f"{cagr(dfb)*100:.2f}%",
-                    "Sharpe": f"{sharpe_ratio(dfb, risk_free_rate=rf_rate):.2f}",
-                    "Volatility": f"{(dfb['Close'].pct_change().std()*np.sqrt(252))*100:.2f}%"
-                })
-            st.dataframe(pd.DataFrame(metrics))
+                    rows.append({"Bank": b, "CAGR": "N/A", "Sharpe": "N/A", "Volatility": "N/A"})
+                else:
+                    bench_df = fetch_history(BENCHMARK, period, interval)
+                    beta_b, vol_b = beta_and_vol(dfb, bench_df)
+                    rows.append({
+                        "Bank": b,
+                        "CAGR": f"{cagr(dfb)*100:.2f}%",
+                        "Sharpe": f"{sharpe_ratio(dfb, risk_free_rate=rf_rate):.2f}",
+                        "Volatility": f"{(dfb['Close'].pct_change().std()*np.sqrt(252))*100:.2f}%"
+                    })
+            st.dataframe(pd.DataFrame(rows))
             returns_df = pd.DataFrame()
             for b in banks:
-                dfb = data[b].set_index('Date').sort_index()
-                if 'Close' in dfb.columns:
-                    returns_df[b] = dfb['Close'].pct_change()
-            if returns_df.dropna(how='all').shape[1] > 1:
+                dfb = data[b].set_index("Date").sort_index()
+                if "Close" in dfb.columns:
+                    returns_df[b] = dfb["Close"].pct_change()
+            if returns_df.dropna(how="all").shape[1] > 1:
                 corr = returns_df.corr()
                 fig_corr = px.imshow(corr, text_auto=True, title="Return Correlation Matrix", template="plotly_white")
                 st.plotly_chart(fig_corr, use_container_width=True)
             with st.expander("AI Comparison Insights (GPT-5)"):
                 if OPENAI_API_KEY:
-                    rows = [f"{k}: CAGR {cagr(data[k])*100:.2f}% | Sharpe {sharpe_ratio(data[k], rf_rate):.2f}" if not data[k].empty else f"{k}: N/A" for k in banks]
-                    ai_prompt = "Compare these banks on performance, risk and diversification potential. Provide a 5-bullet executive summary and a one-line allocation suggestion.\n" + "\n".join(rows)
+                    summary = []
+                    for b in banks:
+                        dfb = data[b]
+                        if dfb.empty:
+                            summary.append(f"{b}: N/A")
+                        else:
+                            summary.append(f"{b}: CAGR {cagr(dfb)*100:.2f}% | Sharpe {sharpe_ratio(dfb, rf_rate):.2f}")
+                    ai_prompt = "Compare these banks on performance, risk and diversification potential. Provide a 5-bullet executive summary and a one-line allocation suggestion.\n" + "\n".join(summary)
                     ai_text = ai_complete(ai_prompt, temperature=0.2, max_tokens=420)
                     if ai_text.startswith("ERROR:"):
                         st.error(ai_text)
