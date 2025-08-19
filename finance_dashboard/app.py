@@ -28,9 +28,57 @@ TICKERS = {
     "Bank of America": "BAC",
     "Barclays (LSE)": "BARC.L"
 }
-BENCHMARK = "^GSPC" 
+BENCHMARK = "^GSPC"
 
 NEWS_API_KEY = st.secrets.get("NEWSAPI_KEY") if "NEWSAPI_KEY" in st.secrets else None
+OPENAI_API_KEY = st.secrets.get("OPENAI_API_KEY") if "OPENAI_API_KEY" in st.secrets else None
+OPENAI_MODEL = st.secrets.get("OPENAI_MODEL", "gpt-5.1")
+
+def ai_complete(prompt, temperature=0.2, max_tokens=600):
+    if not OPENAI_API_KEY:
+        return ""
+    try:
+        import openai
+        openai.api_key = OPENAI_API_KEY
+        resp = openai.ChatCompletion.create(
+            model=OPENAI_MODEL,
+            messages=[{"role":"system","content":"You are GPT-5, a senior equity research analyst specialized in global banks. Be concise, precise, and actionable."},
+                      {"role":"user","content":prompt}],
+            temperature=temperature,
+            max_tokens=max_tokens,
+            n=1
+        )
+        return resp.choices[0].message["content"].strip()
+    except Exception:
+        try:
+            from openai import OpenAI
+            client = OpenAI(api_key=OPENAI_API_KEY)
+            resp = client.chat.completions.create(
+                model=OPENAI_MODEL,
+                messages=[{"role":"system","content":"You are GPT-5, a senior equity research analyst specialized in global banks. Be concise, precise, and actionable."},
+                          {"role":"user","content":prompt}],
+                temperature=temperature,
+                max_tokens=max_tokens
+            )
+            return resp.choices[0].message.content.strip()
+        except Exception:
+            return ""
+
+st.markdown(
+    """
+    <style>
+    .app-header {display:flex;align-items:center;justify-content:space-between;padding:8px 4px;margin-bottom:6px;border-bottom:1px solid #eaeaea}
+    .brand {font-size:20px;font-weight:700;letter-spacing:.2px}
+    .subtle {opacity:.7;font-size:13px}
+    .metric-card .stMetric {background:linear-gradient(180deg, #fff, #f8f9fb);padding:10px;border-radius:12px;border:1px solid #eef0f3}
+    .block-title {font-size:18px;font-weight:600;margin:6px 0 2px 0}
+    .fineprint {font-size:12px;opacity:.7}
+    .news-card {padding:12px;border:1px solid #eef0f3;border-radius:12px;background:#fff}
+    .btnbar {display:flex;gap:8px;align-items:center}
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 @st.cache_data(ttl=0, show_spinner=False)
 def fetch_history(ticker, period="1y", interval="1d"):
@@ -164,14 +212,12 @@ def generate_alerts(df):
             alerts.append("RSI ≥ 70 → Overbought possible")
         if df['RSI'].iloc[-1] <= 30:
             alerts.append("RSI ≤ 30 → Oversold possible")
-
         if 'SMA200' not in df.columns:
             df['SMA200'] = sma(df['Close'], 200)
         if df['Close'].iloc[-1] < df['SMA200'].iloc[-1]:
             alerts.append("Price below SMA200 → bearish long-term signal")
-
         vol = rolling_volatility(df, window=21)
-        if not vol.empty and vol.iloc[-1] > 0.6: 
+        if not vol.empty and vol.iloc[-1] > 0.6:
             alerts.append("High annualized volatility (>60%)")
     except Exception:
         pass
@@ -203,7 +249,7 @@ def create_placeholder_png(message="Chart not available"):
 def render_chart_bytes(name, fig_obj=None, df=None, title="Chart"):
     if fig_obj is not None:
         try:
-            import kaleido  
+            import kaleido
             try:
                 img_bytes = fig_obj.to_image(format="png")
                 if img_bytes:
@@ -212,10 +258,8 @@ def render_chart_bytes(name, fig_obj=None, df=None, title="Chart"):
                 pass
         except Exception:
             pass
-
     if df is None or df.empty:
         return create_placeholder_png(f"{title} - no data")
-
     try:
         buf = BytesIO()
         x = df['Date']
@@ -238,7 +282,6 @@ def render_chart_bytes(name, fig_obj=None, df=None, title="Chart"):
             plt.close()
             buf.seek(0)
             return buf.getvalue()
-
         if name == "rsi":
             if 'RSI' not in df.columns:
                 df['RSI'] = compute_rsi(df['Close'])
@@ -254,7 +297,6 @@ def render_chart_bytes(name, fig_obj=None, df=None, title="Chart"):
             plt.close()
             buf.seek(0)
             return buf.getvalue()
-
         if name == "vol":
             if 'RollingVol21' not in df.columns:
                 df['RollingVol21'] = rolling_volatility(df, window=21)
@@ -267,7 +309,6 @@ def render_chart_bytes(name, fig_obj=None, df=None, title="Chart"):
             plt.close()
             buf.seek(0)
             return buf.getvalue()
-
         if name == "equity":
             eq = simulate_investment(df)
             plt.figure(figsize=(10,3))
@@ -279,7 +320,6 @@ def render_chart_bytes(name, fig_obj=None, df=None, title="Chart"):
             plt.close()
             buf.seek(0)
             return buf.getvalue()
-
         if name == "hist":
             returns = df['Close'].pct_change().dropna()
             plt.figure(figsize=(8,3))
@@ -291,17 +331,11 @@ def render_chart_bytes(name, fig_obj=None, df=None, title="Chart"):
             plt.close()
             buf.seek(0)
             return buf.getvalue()
-
         return create_placeholder_png(f"{name} - chart type not handled")
     except Exception as e:
         return create_placeholder_png(f"Render error: {str(e)[:80]}")
 
 def generate_analysis(df, metrics, rf_rate=0.02):
-    """
-    df : DataFrame (with Close, RSI, SMA50, SMA200, RollingVol21 fields if available)
-    metrics : dict with keys like 'annual_ret','vol','sharpe','sortino','beta','alpha','var95','cagr','max_dd'
-    Returns : (analysis_text, analysis_bullets)
-    """
     def fmt_ratio(x):
         try:
             return f"{x:.2f}"
@@ -312,7 +346,6 @@ def generate_analysis(df, metrics, rf_rate=0.02):
             return f"{x*100:.2f}%"
         except Exception:
             return "N/A"
-
     annual_ret = metrics.get("annual_ret", np.nan)
     vol = metrics.get("vol", np.nan)
     sharpe = metrics.get("sharpe", np.nan)
@@ -322,10 +355,8 @@ def generate_analysis(df, metrics, rf_rate=0.02):
     var95 = metrics.get("var95", np.nan)
     cagr_val = metrics.get("cagr", np.nan)
     max_dd = metrics.get("max_dd", np.nan)
-
     bullets = []
     score = 0
-
     try:
         if 'SMA50' in df.columns and 'SMA200' in df.columns:
             if df['SMA50'].iloc[-1] > df['SMA200'].iloc[-1]:
@@ -336,7 +367,6 @@ def generate_analysis(df, metrics, rf_rate=0.02):
                 score -= 1
     except Exception:
         pass
-
     try:
         if 'RSI' in df.columns:
             rsi_now = df['RSI'].iloc[-1]
@@ -350,7 +380,6 @@ def generate_analysis(df, metrics, rf_rate=0.02):
                 bullets.append(f"RSI ({rsi_now:.1f}) neutral.")
     except Exception:
         pass
-
     try:
         if not np.isnan(vol):
             if vol > 0.6:
@@ -363,7 +392,6 @@ def generate_analysis(df, metrics, rf_rate=0.02):
                 bullets.append(f"Moderate annualized volatility ({vol*100:.1f}%).")
     except Exception:
         pass
-
     try:
         if not np.isnan(sharpe):
             if sharpe > 1:
@@ -376,13 +404,11 @@ def generate_analysis(df, metrics, rf_rate=0.02):
                 bullets.append(f"Sharpe ratio moderate ({fmt_ratio(sharpe)}).")
     except Exception:
         pass
-
     try:
         if not np.isnan(sortino):
             bullets.append(f"Sortino ratio: {fmt_ratio(sortino)} (focuses on downside risk).")
     except Exception:
         pass
-
     try:
         if not np.isnan(var95):
             bullets.append(f"VaR 95%: {fmt_pct(var95)}.")
@@ -393,7 +419,6 @@ def generate_analysis(df, metrics, rf_rate=0.02):
                 score -= 1
     except Exception:
         pass
-
     try:
         if not np.isnan(beta):
             bullets.append(f"Beta vs benchmark: {fmt_ratio(beta)} (market sensitivity).")
@@ -404,13 +429,11 @@ def generate_analysis(df, metrics, rf_rate=0.02):
                 score += 1
     except Exception:
         pass
-
     try:
         if not np.isnan(cagr_val):
             bullets.append(f"CAGR: {fmt_pct(cagr_val)}.")
     except Exception:
         pass
-
     recs = []
     if score >= 2:
         recs.append("Overall signal: Positive — consider cautious allocation.")
@@ -418,7 +441,6 @@ def generate_analysis(df, metrics, rf_rate=0.02):
         recs.append("Overall signal: Negative — consider reducing exposure or hedging.")
     else:
         recs.append("Overall signal: Neutral — monitor indicators for confirmation.")
-
     parts = []
     parts.append(f"Over the selected period the annualized return is {fmt_pct(annual_ret)} and annualized volatility is {fmt_pct(vol)}.")
     if not np.isnan(sharpe):
@@ -428,41 +450,47 @@ def generate_analysis(df, metrics, rf_rate=0.02):
     if not np.isnan(alpha):
         parts.append(f"Alpha (annualized): {fmt_pct(alpha)}.")
     parts.append(recs[0])
-
     analysis_text = " ".join(parts)
     analysis_bullets = bullets + [""] + recs
     return analysis_text, analysis_bullets
 
 st.sidebar.title("Controls")
-tab = st.sidebar.radio("Tabs", ["Dashboard", "News"])
+main_tab = st.sidebar.radio("Tabs", ["Dashboard", "News", "AI Studio"])
 st.sidebar.markdown("---")
-st.sidebar.caption("Built with Streamlit, yfinance, Plotly")
+st.sidebar.caption("Built with Streamlit, yfinance, Plotly, FPDF, GPT-5")
 
-if tab == "Dashboard":
-    st.markdown("<h1 style='font-family:-apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto;'>Banking Market Intelligence Dashboard</h1>", unsafe_allow_html=True)
+st.markdown(
+    """
+    <div class="app-header">
+        <div class="brand">Banking Market Intelligence</div>
+        <div class="subtle">Live market data • Quant metrics • PDF reporting • AI insights</div>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+if main_tab == "Dashboard":
     mode = st.sidebar.radio("Mode", ["Single Bank", "Comparison"])
     period = st.sidebar.selectbox("Period", ["1mo", "3mo", "6mo", "1y", "5y"], index=3)
     interval = st.sidebar.selectbox("Interval", ["1d", "1wk"], index=0)
     show_tech = st.sidebar.checkbox("Show technical indicators", value=True)
     rf_rate = st.sidebar.number_input("Risk-free rate (annual, e.g. 0.02)", value=0.02, step=0.005, format="%.4f")
+    st.markdown("<div class='block-title'>Dashboard</div>", unsafe_allow_html=True)
 
     if mode == "Single Bank":
         bank = st.sidebar.selectbox("Select bank", list(TICKERS.keys()))
         ticker = TICKERS[bank]
         df = fetch_history(ticker, period, interval)
         info = fetch_info(ticker)
-
         if df.empty or 'Close' not in df.columns or df['Close'].isnull().all():
             st.error("No market data available for this bank and period.")
         else:
             benchmark_df = fetch_history(BENCHMARK, period, interval)
-
             if show_tech:
                 df['SMA50'] = sma(df['Close'], 50)
                 df['SMA200'] = sma(df['Close'], 200)
                 df['RSI'] = compute_rsi(df['Close'])
                 df['RollingVol21'] = rolling_volatility(df, window=21)
-
             last_price = df['Close'].iloc[-1]
             market_cap = info.get('marketCap', None)
             cagr_val = cagr(df)
@@ -476,18 +504,38 @@ if tab == "Dashboard":
             treynor = (annual_ret - rf_rate) / beta if (not np.isnan(annual_ret) and not np.isnan(beta) and beta != 0) else np.nan
 
             col1, col2, col3, col4, col5 = st.columns(5)
-            col1.metric("Last Price (USD)", f"{last_price:.2f}")
-            col2.metric("Market Cap", f"{market_cap:,}" if market_cap else "N/A")
-            col3.metric("CAGR (annual)", f"{cagr_val*100:.2f}%" if not np.isnan(cagr_val) else "N/A")
-            col4.metric("Max Drawdown", f"{max_dd*100:.2f}%" if not np.isnan(max_dd) else "N/A")
-            col5.metric("Sharpe Ratio", f"{sharpe:.2f}" if not np.isnan(sharpe) else "N/A")
+            with col1:
+                st.container().markdown("<div class='metric-card'></div>", unsafe_allow_html=True)
+                st.metric("Last Price (USD)", f"{last_price:.2f}")
+            with col2:
+                st.container().markdown("<div class='metric-card'></div>", unsafe_allow_html=True)
+                st.metric("Market Cap", f"{market_cap:,}" if market_cap else "N/A")
+            with col3:
+                st.container().markdown("<div class='metric-card'></div>", unsafe_allow_html=True)
+                st.metric("CAGR (annual)", f"{cagr_val*100:.2f}%" if not np.isnan(cagr_val) else "N/A")
+            with col4:
+                st.container().markdown("<div class='metric-card'></div>", unsafe_allow_html=True)
+                st.metric("Max Drawdown", f"{max_dd*100:.2f}%" if not np.isnan(max_dd) else "N/A")
+            with col5:
+                st.container().markdown("<div class='metric-card'></div>", unsafe_allow_html=True)
+                st.metric("Sharpe Ratio", f"{sharpe:.2f}" if not np.isnan(sharpe) else "N/A")
 
             col6, col7, col8, col9, col10 = st.columns(5)
-            col6.metric("Sortino Ratio", f"{sortino:.2f}" if not np.isnan(sortino) else "N/A")
-            col7.metric("Annual Volatility", f"{vol*100:.2f}%" if not np.isnan(vol) else "N/A")
-            col8.metric("Beta vs S&P500", f"{beta:.2f}" if not np.isnan(beta) else "N/A")
-            col9.metric("Alpha (ann.)", f"{alpha_ann*100:.2f}%" if not np.isnan(alpha_ann) else "N/A")
-            col10.metric("Treynor Ratio", f"{treynor:.2f}" if not np.isnan(treynor) else "N/A")
+            with col6:
+                st.container().markdown("<div class='metric-card'></div>", unsafe_allow_html=True)
+                st.metric("Sortino Ratio", f"{sortino:.2f}" if not np.isnan(sortino) else "N/A")
+            with col7:
+                st.container().markdown("<div class='metric-card'></div>", unsafe_allow_html=True)
+                st.metric("Annual Volatility", f"{vol*100:.2f}%" if not np.isnan(vol) else "N/A")
+            with col8:
+                st.container().markdown("<div class='metric-card'></div>", unsafe_allow_html=True)
+                st.metric("Beta vs S&P500", f"{beta:.2f}" if not np.isnan(beta) else "N/A")
+            with col9:
+                st.container().markdown("<div class='metric-card'></div>", unsafe_allow_html=True)
+                st.metric("Alpha (ann.)", f"{alpha_ann*100:.2f}%" if not np.isnan(alpha_ann) else "N/A")
+            with col10:
+                st.container().markdown("<div class='metric-card'></div>", unsafe_allow_html=True)
+                st.metric("Treynor Ratio", f"{treynor:.2f}" if not np.isnan(treynor) else "N/A")
 
             fig_price = go.Figure(data=[go.Candlestick(
                 x=df['Date'], open=df['Open'], high=df['High'],
@@ -505,21 +553,17 @@ if tab == "Dashboard":
                     fig_sma.add_trace(go.Scatter(x=df['Date'], y=df['SMA200'], name='SMA200', mode='lines'))
                     fig_sma.update_layout(title="Price with SMAs", template="plotly_white", height=350)
                     st.plotly_chart(fig_sma, use_container_width=True)
-
                     fig_rsi = px.line(df, x='Date', y='RSI', title="RSI (14)", template="plotly_white", height=220)
                     fig_rsi.update_yaxes(range=[0,100])
                     st.plotly_chart(fig_rsi, use_container_width=True)
-
             with right:
                 fig_hist = px.histogram(df.assign(Returns=df['Close'].pct_change()), x='Returns', nbins=50, title="Daily Returns Distribution", template="plotly_white", height=300)
                 st.plotly_chart(fig_hist, use_container_width=True)
-
                 equity = simulate_investment(df)
                 fig_eq = go.Figure()
                 fig_eq.add_trace(go.Scatter(x=df['Date'], y=equity, name='Equity Curve'))
                 fig_eq.update_layout(title="Equity Curve (1 unit invested)", template="plotly_white", height=300)
                 st.plotly_chart(fig_eq, use_container_width=True)
-
                 alerts = generate_alerts(df)
                 if alerts:
                     st.warning(" | ".join(alerts))
@@ -540,7 +584,6 @@ if tab == "Dashboard":
                 "cagr": cagr_val,
                 "max_dd": max_dd
             }
-
             analysis_text, analysis_bullets = generate_analysis(df, metrics_for_analysis, rf_rate=rf_rate)
 
             st.markdown("**Automated numerical summary:**")
@@ -567,6 +610,17 @@ if tab == "Dashboard":
                 if b:
                     st.write("- " + b)
 
+            with st.expander("AI Insights (GPT-5)"):
+                if OPENAI_API_KEY:
+                    ai_prompt = f"Ticker: {ticker}\nBank: {bank}\nPeriod: {period}\nInterval: {interval}\nMetrics: {auto_text}\nBullets: {' | '.join([x for x in analysis_bullets if x])}\nProvide a concise investment brief with drivers, risks, and a tactical stance in under 180 words."
+                    ai_text = ai_complete(ai_prompt, temperature=0.2, max_tokens=420)
+                    if ai_text:
+                        st.markdown(ai_text)
+                    else:
+                        st.info("AI unavailable right now.")
+                else:
+                    st.info("Add OPENAI_API_KEY to Streamlit secrets to enable AI insights.")
+
             st.markdown("### Generate a structured PDF report")
             generate_col1, generate_col2 = st.columns([3,1])
             with generate_col1:
@@ -587,22 +641,19 @@ if tab == "Dashboard":
                             img_bytes = None
                             if fig is not None:
                                 try:
-                                    import kaleido 
+                                    import kaleido
                                     img_bytes = fig.to_image(format="png")
                                 except Exception:
                                     img_bytes = render_chart_bytes(name, fig_obj=None, df=df, title=title)
                             else:
                                 img_bytes = render_chart_bytes(name, fig_obj=None, df=df, title=title)
-
                             if not img_bytes:
                                 img_bytes = create_placeholder_png(f"{title} - no image")
-
                             tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
                             tmp.write(img_bytes)
                             tmp.flush()
                             tmp_files.append(tmp.name)
                             tmp.close()
-
                         pdf = FPDF(unit="pt", format="A4")
                         FONT_PATH = os.path.join(os.path.dirname(__file__), "fonts", "DejaVuSans.ttf")
                         try:
@@ -610,7 +661,6 @@ if tab == "Dashboard":
                         except Exception:
                             pass
                         pdf.set_auto_page_break(auto=True, margin=36)
-
                         pdf.add_page()
                         try:
                             pdf.set_font("DejaVu", size=18)
@@ -624,7 +674,6 @@ if tab == "Dashboard":
                         pdf.ln(8)
                         pdf.multi_cell(0, 12, f"Report generated: {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}", align="C")
                         pdf.multi_cell(0, 12, f"Period: {period} | Interval: {interval}", align="C")
-
                         pdf.add_page()
                         try:
                             pdf.set_font("DejaVu", size=14)
@@ -648,7 +697,6 @@ if tab == "Dashboard":
                         pdf.cell(0, 12, f"Beta vs S&P500: {beta:.2f}" if not np.isnan(beta) else "Beta vs S&P500: N/A", ln=True)
                         pdf.cell(0, 12, f"Alpha (ann.): {alpha_ann*100:.2f}%" if not np.isnan(alpha_ann) else "Alpha (ann.): N/A", ln=True)
                         pdf.cell(0, 12, f"VaR 95%: {var95*100:.2f}%" if not np.isnan(var95) else "VaR 95%: N/A", ln=True)
-
                         pdf.ln(8)
                         try:
                             pdf.set_font("DejaVu", size=12)
@@ -660,7 +708,6 @@ if tab == "Dashboard":
                         except Exception:
                             pdf.set_font("Helvetica", size=10)
                         pdf.multi_cell(0, 10, auto_text)
-
                         pdf.ln(6)
                         try:
                             pdf.set_font("DejaVu", size=12)
@@ -674,7 +721,6 @@ if tab == "Dashboard":
                         for b in analysis_bullets:
                             if b:
                                 pdf.multi_cell(0, 10, "- " + b)
-
                         for path in tmp_files:
                             pdf.add_page()
                             try:
@@ -695,7 +741,6 @@ if tab == "Dashboard":
                             pdf_bytes = pdf.output(dest="S").encode("latin1", "ignore")
                         except Exception:
                             pdf_bytes = pdf.output(dest="S").encode("utf-8", "ignore")
-
                         st.download_button(
                             label="Download PDF",
                             data=pdf_bytes,
@@ -703,15 +748,13 @@ if tab == "Dashboard":
                             mime="application/pdf",
                             key=f"download_pdf_{ticker}"
                         )
-
                     finally:
                         for p in tmp_files:
                             try:
                                 os.remove(p)
                             except Exception:
                                 pass
-
-    else: 
+    else:
         banks = st.sidebar.multiselect("Select banks", list(TICKERS.keys()), default=["Goldman Sachs", "Morgan Stanley"])
         if len(banks) < 2:
             st.warning("Select at least two banks for comparison.")
@@ -719,7 +762,6 @@ if tab == "Dashboard":
             data = {}
             for b in banks:
                 data[b] = fetch_history(TICKERS[b], period, interval)
-
             fig = go.Figure()
             for bank, dfb in data.items():
                 if not dfb.empty and 'Close' in dfb.columns:
@@ -728,7 +770,6 @@ if tab == "Dashboard":
                     fig.add_trace(go.Scatter(x=dfb_sorted['Date'], y=cum, mode='lines', name=bank))
             fig.update_layout(title="Normalized Cumulative Returns", template="plotly_white")
             st.plotly_chart(fig, use_container_width=True)
-
             metrics = []
             for b in banks:
                 dfb = data[b]
@@ -744,7 +785,6 @@ if tab == "Dashboard":
                     "Volatility": f"{(dfb['Close'].pct_change().std()*np.sqrt(252))*100:.2f}%"
                 })
             st.dataframe(pd.DataFrame(metrics))
-
             returns_df = pd.DataFrame()
             for b in banks:
                 dfb = data[b].set_index('Date').sort_index()
@@ -754,9 +794,20 @@ if tab == "Dashboard":
                 corr = returns_df.corr()
                 fig_corr = px.imshow(corr, text_auto=True, title="Return Correlation Matrix", template="plotly_white")
                 st.plotly_chart(fig_corr, use_container_width=True)
+            with st.expander("AI Comparison Insights (GPT-5)"):
+                if OPENAI_API_KEY:
+                    rows = [f"{k}: CAGR {cagr(data[k])*100:.2f}% | Sharpe {sharpe_ratio(data[k], rf_rate):.2f}" if not data[k].empty else f"{k}: N/A" for k in banks]
+                    ai_prompt = "Compare these banks on performance, risk and diversification potential. Provide a 5-bullet executive summary and a one-line allocation suggestion.\n" + "\n".join(rows)
+                    ai_text = ai_complete(ai_prompt, temperature=0.2, max_tokens=420)
+                    if ai_text:
+                        st.markdown(ai_text)
+                    else:
+                        st.info("AI unavailable right now.")
+                else:
+                    st.info("Add OPENAI_API_KEY to Streamlit secrets to enable AI insights.")
 
-elif tab == "News":
-    st.markdown("<h1>Latest Banking News</h1>", unsafe_allow_html=True)
+elif main_tab == "News":
+    st.markdown("<div class='block-title'>Latest Banking News</div>", unsafe_allow_html=True)
     bank_for_news = st.selectbox("Select bank for news", list(TICKERS.keys()))
     if not NEWS_API_KEY:
         st.error("NEWSAPI_KEY missing or invalid. Please add a valid key to Streamlit secrets to fetch news.")
@@ -766,6 +817,37 @@ elif tab == "News":
         if not articles:
             st.info("No news available for this bank at the moment.")
     for art in articles:
-        st.markdown(f"**[{art.get('title')}]({art.get('url')})** — *{art.get('source', {}).get('name', '')}*")
-        st.write(art.get("description", ""))
-        st.write("---")
+        st.markdown(f"<div class='news-card'><b><a href='{art.get('url')}' target='_blank'>{art.get('title')}</a></b> — <i>{art.get('source', {}).get('name', '')}</i><br/>{art.get('description','')}</div>", unsafe_allow_html=True)
+        st.write("")
+    with st.expander("AI News Brief (GPT-5)"):
+        if OPENAI_API_KEY and articles:
+            condensed = "\n\n".join([f"Title: {a.get('title')}\nSource: {a.get('source',{}).get('name','')}\nDesc: {a.get('description','')}" for a in articles])
+            ai_prompt = f"Summarize the following bank-specific headlines into a concise market brief with potential implications for the stock. End with a risk watchlist.\n{condensed}"
+            ai_text = ai_complete(ai_prompt, temperature=0.3, max_tokens=420)
+            if ai_text:
+                st.markdown(ai_text)
+            else:
+                st.info("AI unavailable right now.")
+        elif not OPENAI_API_KEY:
+            st.info("Add OPENAI_API_KEY to Streamlit secrets to enable AI news briefs.")
+
+elif main_tab == "AI Studio":
+    st.markdown("<div class='block-title'>AI Studio</div>", unsafe_allow_html=True)
+    st.caption("Ask GPT-5 tailored questions about banks, metrics, or macro context.")
+    user_q = st.text_area("Prompt")
+    colA, colB = st.columns([1,1])
+    with colA:
+        temp = st.slider("Creativity", 0.0, 1.0, 0.2, 0.05)
+    with colB:
+        tokens = st.slider("Max tokens", 128, 1200, 500, 50)
+    if st.button("Run GPT-5"):
+        if not OPENAI_API_KEY:
+            st.error("Add OPENAI_API_KEY to Streamlit secrets.")
+        else:
+            out = ai_complete(user_q.strip(), temperature=temp, max_tokens=tokens)
+            if out:
+                st.markdown(out)
+            else:
+                st.info("AI unavailable right now.")
+
+st.markdown("<span class='fineprint'>Data may be delayed. This tool is for informational purposes only and not investment advice.</span>", unsafe_allow_html=True)
