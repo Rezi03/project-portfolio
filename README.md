@@ -1,6 +1,6 @@
 # Rezi Sabashvili | Portfolio Data Analytics & Développement Web
 
-**Étudiant en Master Learning Analytics**
+**Étudiant en Master Data Science**
 *Université de Reims Champagne-Ardenne*
 
 **Visitez mon site web portfolio interactif :** [https://rezi03.github.io/portfolio/](https://rezi03.github.io/portfolio/)
@@ -94,3 +94,4 @@ Un projet de groupe axé sur la construction d'une application Python interactiv
 
 * Email : rezisabashvili1@gmail.com
 * LinkedIn : [Rezi Sabashvili](https://www.linkedin.com/in/rezisabashvili)
+* Numéro : +33 6 18 57 91 73
