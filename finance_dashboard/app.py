@@ -10,6 +10,7 @@ from fpdf import FPDF
 import tempfile
 import os
 from datetime import datetime
+import time
 import matplotlib.pyplot as plt
 
 st.cache_data.clear()
@@ -534,12 +535,56 @@ def render_dashboard(ticker_dict, tab_name):
             col9.metric("Alpha (ann.)", f"{alpha_ann*100:.2f}%" if not np.isnan(alpha_ann) else "N/A")
             col10.metric("Ratio de Treynor", f"{treynor:.2f}" if not np.isnan(treynor) else "N/A")
 
+# --- BLOC GRAPHIQUE "WIPE EFFECT" (PROPRE & FLUIDE) ---
+            
+            # 1. CSS pour l'effet "Dessin" (Balayage gauche -> droite)
+            st.markdown(f"""
+                <style>
+                /* On cible le graphique spécifique avec une animation de masque */
+                div[data-testid="stPlotlyChart"] > div {{
+                    animation: wipeEnter 1.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+                }}
+                
+                @keyframes wipeEnter {{
+                    0% {{ 
+                        clip-path: inset(0 100% 0 0); /* Masqué à 100% à droite */
+                        opacity: 0.5;
+                    }}
+                    100% {{ 
+                        clip-path: inset(0 0 0 0);    /* Visible entièrement */
+                        opacity: 1;
+                    }}
+                }}
+                </style>
+            """, unsafe_allow_html=True)
+
+            # 2. Création du graphique
             fig_price = go.Figure(data=[go.Candlestick(
-                x=df['Date'], open=df['Open'], high=df['High'],
-                low=df['Low'], close=df['Close'], name='Prix'
+                x=df['Date'],
+                open=df['Open'], high=df['High'],
+                low=df['Low'], close=df['Close'],
+                name='Prix'
             )])
-            fig_price.update_layout(title=f"{bank} Évolution du Prix", xaxis_rangeslider_visible=False, template="plotly_white", height=480)
-            st.plotly_chart(fig_price, use_container_width=True)
+
+            # 3. Design Épuré
+            fig_price.update_layout(
+                title=dict(text=f"{bank}", font=dict(size=24)),
+                yaxis_title="Prix (USD)",
+                xaxis_rangeslider_visible=False,
+                template="plotly_white",
+                height=550,
+                margin=dict(l=10, r=10, t=50, b=20),
+                hovermode="x unified",
+                plot_bgcolor='rgba(0,0,0,0)',
+                xaxis=dict(showgrid=False, range=[df['Date'].iloc[0], df['Date'].iloc[-1]]),
+                yaxis=dict(showgrid=True, gridcolor='rgba(200,200,200,0.2)')
+            )
+            
+            # 4. AFFICHAGE AVEC CLÉ UNIQUE (C'est le secret pour relancer l'anim)
+            # On ajoute key=bank pour forcer Streamlit à recréer le bloc à chaque changement d'actif
+            st.plotly_chart(fig_price, use_container_width=True, key=f"chart_{ticker}_{period}")
+            
+            # --- FIN BLOC ---
 
             left, right = st.columns([2,1])
             with left:
