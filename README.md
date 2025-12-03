@@ -33,7 +33,7 @@ Le site officiel de "Bulles Étudiantes", la radio étudiante de l'ICP (Institut
 
 Ce projet a été développé dans le cadre du cours *Management des Projets Digitaux 2*. Il s'agit d'une application interactive conçue pour explorer et analyser un jeu de données d'assurance automobile, incluant une modélisation prédictive pour le churn (attrition) et les coûts des primes.
 
-* **Voir le dépôt :** [Lien GitLab](https://gitlab-mi.univ-reims.fr/fade0003/management-des-projets-digitaux-2.git)
+* **Voir le dépôt :** [Lien GitLab]()
 * **Jeu de données :** Motor Vehicle Insurance Data (Publié le 30 juillet 2024).
 
 **Fonctionnalités Clés :**
